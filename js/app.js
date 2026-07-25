@@ -507,13 +507,7 @@
     return '' +
       '<div class="screen home">' +
       '  <div class="home-emblem" aria-hidden="true">' +
-      '    <svg viewBox="0 0 100 100" width="110" height="110">' +
-      '      <circle cx="50" cy="50" r="46" fill="none" stroke="var(--red)" stroke-width="4"/>' +
-      '      <path d="M50 14 L58 40 L86 40 L63 56 L72 84 L50 66 L28 84 L37 56 L14 40 L42 40 Z" fill="var(--red)"/>' +
-      '      <circle cx="50" cy="52" r="10" fill="var(--bg)"/>' +
-      '      <circle cx="50" cy="52" r="10" fill="none" stroke="var(--blue)" stroke-width="3"/>' +
-      '      <circle cx="50" cy="52" r="3.5" fill="var(--blue)"/>' +
-      '    </svg>' +
+      '    <img src="icons/icon.svg" alt="" width="122" height="122">' +
       '  </div>' +
       '  <h1 class="title">' + t('app.title') + '</h1>' +
       '  <p class="tagline">' + t('app.tagline') + '</p>' +
