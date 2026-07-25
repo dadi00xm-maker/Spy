@@ -21,14 +21,14 @@ compte, aucune donnée collectée.
   rotation du chef d'équipe, piste des votes rejetés (5 rejets = victoire des
   espions), règle des « 2 échecs » pour la mission 4 à partir de 7 joueurs.
 - **Vote public** pour approuver ou rejeter chaque équipe.
-- **Missions secrètes** : chaque agent choisit Succès ou Échec sur le
+- **Missions secrètes** : chaque agent choisit Succès ou Sabotage sur le
   téléphone, puis on retourne les cartes mélangées — impossible de savoir qui
   a saboté.
 - **Anti-regards indiscrets** : pendant une mission, l'écran est strictement
   identique pour tous les rôles (mêmes fonds de cartes, rien de désactivé —
-  seules les étiquettes sont colorées : Échec en rouge, Succès en bleu),
+  seules les étiquettes sont colorées : Sabotage en rouge, Succès en bleu),
   l'ordre des deux cartes est tiré au sort pour chaque joueur (la position du
-  doigt ne révèle rien), et un résistant qui touche Échec sélectionne
+  doigt ne révèle rien), et un résistant qui touche Sabotage sélectionne
   automatiquement Succès (règle officielle). Les cartes de rôle utilisent
   aussi un fond neutre illisible à distance.
 - **Thème clair ou sombre** ☀️🌙 : bouton sur l'écran d'accueil, préférence
@@ -87,8 +87,9 @@ python3 -m http.server 8000
 | 10      | 4       | 3 · 4 · 4 · 5 · 5      |
 
 Chaque manche : le chef propose une équipe → tout le monde vote → si l'équipe
-est approuvée, ses membres jouent Succès/Échec en secret. Une carte Échec
-suffit à saboter (deux pour la mission 4 à partir de 7 joueurs). Première
+est approuvée, ses membres jouent Succès/Sabotage en secret. Une carte
+Sabotage suffit à faire échouer la mission (deux pour la mission 4 à partir
+de 7 joueurs). Première
 faction à 3 missions gagnées l'emporte ; 5 équipes rejetées d'affilée donnent
 la victoire aux espions.
 
