@@ -30,8 +30,15 @@ compte, aucune donnée collectée.
   révèle rien), et une carte Échec jouée par un résistant est comptée comme un
   Succès (règle officielle). Les cartes de rôle utilisent aussi un fond neutre
   illisible à distance.
-- **Options** : variante « espions à l'aveugle », minuteur de discussion
-  (3 / 5 / 10 min).
+- **Annonceur vocal** 🔊 : l'app annonce à voix haute à qui passer le
+  téléphone, les résultats des votes et des missions, et le vainqueur
+  (synthèse vocale du téléphone, FR/EN, bouton muet en cours de partie).
+- **Cérémonie d'ouverture guidée** : posez le téléphone au centre, la voix
+  mène le rituel — « Fermez tous les yeux… Espions, reconnaissez vos
+  complices… » — avec tic-tac pendant les pauses, adaptée aux options
+  (espions à l'aveugle, mode Commandant).
+- **Options** : variante « espions à l'aveugle », mode Commandant, annonceur
+  vocal, minuteur de discussion (3 / 5 / 10 min).
 - **Bilingue** : français 🇫🇷 (par défaut) et anglais 🇬🇧.
 - **Reprise de partie** : la partie en cours est sauvegardée sur le téléphone.
 

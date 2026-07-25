@@ -81,6 +81,8 @@ body {
 .topbar h2 { margin: 0; font-size: 1.05rem; text-align: center; letter-spacing: 0.06em; text-transform: uppercase; }
 .topbar > :first-child { justify-self: start; }
 .topbar > :last-child { justify-self: end; }
+.topbar-right { display: flex; align-items: center; }
+.topbar-right .btn-link { padding: 8px 6px; }
 .progress { color: var(--muted); font-size: 0.85rem; text-align: center; }
 
 .hint { color: var(--muted); font-size: 0.9rem; margin: 4px 0; line-height: 1.45; }
@@ -438,6 +440,18 @@ body {
 .rcard.ok { background: #14324d; border-color: var(--blue); color: #9cc2ff; }
 .rcard.ko { background: #3c151c; border-color: var(--red); color: #ff9ba0; }
 .rcard svg { width: 36px; height: 36px; display: block; }
+
+/* --- Cérémonie d'ouverture ---------------------------------------- */
+
+.cer-icon { font-size: 3rem; }
+.cer-step {
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 420px;
+}
+.cer-dots { display: flex; gap: 8px; justify-content: center; margin-top: 6px; }
 
 /* --- Minuteur ----------------------------------------------------- */
 

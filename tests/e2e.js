@@ -48,7 +48,7 @@ async function main() {
     return !c.classList.contains('flipped') && bf === 'hidden';
   });
 
-  async function revealAll(shotSpy) {
+  async function revealAll(shotSpy, checkCeremony) {
     const st = await state();
     const players = st.game.players;
     let spyShotDone = false;
@@ -73,6 +73,20 @@ async function main() {
       await page.waitForTimeout(650);
       assert.strictEqual(await cardFlipped(), false, 'carte cachée après le second toucher');
       await click('#reveal-next:not([disabled])');
+    }
+    // Avec l'annonceur vocal (défaut), la cérémonie d'ouverture s'intercale.
+    const after = await state();
+    if (after.screen === 'ceremony') {
+      if (checkCeremony) {
+        await click('[data-action="cerStart"]');
+        await page.waitForTimeout(400);
+        const stepText = await page.locator('.cer-step').innerText();
+        assert.ok(stepText.length > 5, 'étape de cérémonie affichée');
+        await shot('13-ceremonie');
+      }
+      await click('[data-action="cerSkip"]');
+      const afterSkip = await state();
+      assert.strictEqual(afterSkip.screen, 'board', 'plateau après la cérémonie');
     }
   }
 
@@ -256,7 +270,7 @@ async function main() {
   await click('[data-action="toSetup"]');
   await click('[data-action="toggleCommander"]');
   await click('[data-action="startGame"]');
-  await revealAll(false);
+  await revealAll(false, true); // vérifie aussi la cérémonie d'ouverture
   st = await state();
   assert.strictEqual(st.game.commanderMode, true);
   const cmdIdx = st.game.players.findIndex(p => p.special === 'commander');

@@ -55,6 +55,7 @@
       names: [],
       knownSpies: true,
       commander: false,
+      voice: true,
       timerMin: 0
     },
     game: null,
@@ -78,6 +79,7 @@
       players: players,
       knownSpies: options.knownSpies,
       commanderMode: !!options.commander,
+      voice: options.voice !== false,
       timerMin: options.timerMin,
       round: 0,
       leader: Math.floor(Math.random() * n),
@@ -132,7 +134,7 @@
   function hasResumableGame() {
     var s = loadSave();
     return !!(s && s.game && !s.game.winner &&
-      (s.screen === 'board' || s.screen === 'reveal'));
+      (s.screen === 'board' || s.screen === 'reveal' || s.screen === 'ceremony'));
   }
 
   /* ------------------------------------------------------------------ */
@@ -185,6 +187,124 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Annonceur vocal (synthèse vocale du téléphone)                      */
+  /* ------------------------------------------------------------------ */
+
+  function voiceSupported() {
+    return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  }
+
+  // Parle si l'annonceur est activé pour la partie en cours. `onend` est
+  // toujours appelé (aussi en cas d'échec ou de synthèse indisponible),
+  // avec un garde-fou temporel pour ne jamais bloquer le jeu.
+  function speak(text, onend) {
+    var enabled = voiceSupported() && g() && g().voice;
+    if (!enabled) { if (onend) onend(); return; }
+    var done = false;
+    var finish = function () { if (!done) { done = true; if (onend) onend(); } };
+    try {
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = state.lang === 'fr' ? 'fr-FR' : 'en-US';
+      var voices = window.speechSynthesis.getVoices() || [];
+      for (var i = 0; i < voices.length; i++) {
+        if (voices[i].lang && voices[i].lang.indexOf(state.lang) === 0) {
+          u.voice = voices[i];
+          break;
+        }
+      }
+      u.rate = 0.95;
+      u.onend = finish;
+      u.onerror = finish;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+      setTimeout(finish, Math.max(3000, text.length * 100));
+    } catch (e) {
+      finish();
+    }
+  }
+
+  function voiceStop() {
+    if (voiceSupported()) { try { window.speechSynthesis.cancel(); } catch (e) {} }
+  }
+
+  /* Tic-tac discret pendant les pauses de la cérémonie. */
+  var tickCtx = null;
+  var tickInt = null;
+
+  function tickStart() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!tickCtx) tickCtx = new Ctx();
+      if (tickCtx.state === 'suspended') tickCtx.resume();
+      tickStop();
+      tickInt = setInterval(function () {
+        var o = tickCtx.createOscillator();
+        var gn = tickCtx.createGain();
+        o.connect(gn);
+        gn.connect(tickCtx.destination);
+        o.frequency.value = 1250;
+        gn.gain.setValueAtTime(0.05, tickCtx.currentTime);
+        gn.gain.exponentialRampToValueAtTime(0.0001, tickCtx.currentTime + 0.06);
+        o.start();
+        o.stop(tickCtx.currentTime + 0.07);
+      }, 600);
+    } catch (e) { /* pas de son : la cérémonie reste lisible à l'écran */ }
+  }
+
+  function tickStop() {
+    if (tickInt) { clearInterval(tickInt); tickInt = null; }
+  }
+
+  /* Cérémonie d'ouverture : étapes lues à voix haute, avec pauses. */
+  var cer = { running: false, idx: 0, timer: null };
+
+  function ceremonySteps() {
+    var s = [{ text: t('cer.close'), wait: 3000, tick: true }];
+    if (g().knownSpies) {
+      s.push({ text: t('cer.spiesOpen'), wait: 5000, tick: true });
+      s.push({ text: t('cer.spiesClose'), wait: 2000, tick: true });
+    }
+    if (g().commanderMode) {
+      s.push({ text: t('cer.thumbs'), wait: 3000, tick: true });
+      s.push({ text: t('cer.cmdOpen'), wait: 4000, tick: true });
+      s.push({ text: t('cer.cmdClose'), wait: 3000, tick: true });
+    }
+    s.push({ text: t('cer.openAll'), wait: 600, tick: false });
+    return s;
+  }
+
+  function cerStop() {
+    cer.running = false;
+    cer.idx = 0;
+    if (cer.timer) { clearTimeout(cer.timer); cer.timer = null; }
+    tickStop();
+    voiceStop();
+  }
+
+  function cerRun(i) {
+    if (!cer.running) return;
+    var steps = ceremonySteps();
+    if (i >= steps.length) {
+      cerStop();
+      enterBoard();
+      render();
+      return;
+    }
+    cer.idx = i;
+    render();
+    var st = steps[i];
+    speak(st.text, function () {
+      if (!cer.running) return;
+      if (st.tick) tickStart();
+      cer.timer = setTimeout(function () {
+        tickStop();
+        cerRun(i + 1);
+      }, st.wait);
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Minuteur de discussion                                              */
   /* ------------------------------------------------------------------ */
 
@@ -211,6 +331,7 @@
           timer.finished = true;
           beep();
           vibrate([200, 100, 200]);
+          speak(t('timer.done'));
         }
         updateTimerChip();
       }, 1000);
@@ -235,6 +356,14 @@
   function g() { return state.game; }
 
   function nPlayers() { return g().players.length; }
+
+  function enterBoard() {
+    g().phase = 'team';
+    g().team = [];
+    state.screen = 'board';
+    timerResetTo(g().timerMin);
+    save();
+  }
 
   function teamSize() {
     return RULES.teamSizes(nPlayers())[g().round];
@@ -307,6 +436,7 @@
     } else {
       g().missionIdx++;
       g().missionStage = 'pass';
+      speak(t('mission.pass') + ' ' + g().players[g().team[g().missionIdx]].name);
     }
     save();
   }
@@ -353,6 +483,7 @@
       case 'home': app.innerHTML = viewHome(); break;
       case 'setup': app.innerHTML = viewSetup(); break;
       case 'reveal': app.innerHTML = viewReveal(); break;
+      case 'ceremony': app.innerHTML = viewCeremony(); break;
       case 'board': app.innerHTML = viewBoard(); break;
       case 'gameover': app.innerHTML = viewGameOver(); break;
       case 'rules': app.innerHTML = viewRules(); break;
@@ -425,6 +556,10 @@
       '    <button class="opt-row" data-action="toggleCommander">' +
       '      <span>★ ' + t('setup.commander') + '<small>' + t('setup.commanderHint') + '</small></span>' +
       '      <span class="switch' + (state.setup.commander ? ' on' : '') + '"></span>' +
+      '    </button>' +
+      '    <button class="opt-row" data-action="toggleVoiceSetup">' +
+      '      <span>🔊 ' + t('setup.voice') + '<small>' + t('setup.voiceHint') + '</small></span>' +
+      '      <span class="switch' + (state.setup.voice ? ' on' : '') + '"></span>' +
       '    </button>' +
       '    <button class="opt-row" data-action="cycleTimer">' +
       '      <span>' + t('setup.timer') + '</span>' +
@@ -510,6 +645,35 @@
       '</div>';
   }
 
+  function viewCeremony() {
+    var body;
+    if (!cer.running) {
+      body = '' +
+        '<div class="pass-box">' +
+        '  <div class="cer-icon" aria-hidden="true">🔊</div>' +
+        '  <p class="hint center">' + t('cer.intro') + '</p>' +
+        '  <button class="btn btn-primary btn-big" data-action="cerStart">' + t('cer.start') + '</button>' +
+        '  <button class="btn btn-link" data-action="cerSkip">' + t('cer.skip') + '</button>' +
+        '</div>';
+    } else {
+      var steps = ceremonySteps();
+      var dots = steps.map(function (_, i) {
+        return '<span class="pip' + (i <= cer.idx ? ' on' : '') + '"></span>';
+      }).join('');
+      body = '' +
+        '<div class="pass-box">' +
+        '  <p class="cer-step">' + steps[cer.idx].text + '</p>' +
+        '  <div class="cer-dots">' + dots + '</div>' +
+        '  <button class="btn btn-link" data-action="cerSkip">' + t('cer.skip') + '</button>' +
+        '</div>';
+    }
+    return '' +
+      '<div class="screen reveal">' +
+      '  <header class="topbar"><span></span><h2>' + t('cer.title') + '</h2><span></span></header>' +
+      body +
+      '</div>';
+  }
+
   function missionTrack() {
     var game = g();
     var sizes = RULES.teamSizes(nPlayers());
@@ -543,7 +707,10 @@
       '<header class="topbar">' +
       '  <button class="btn btn-link" data-action="askQuit">✕ ' + t('board.quit') + '</button>' +
       '  <h2>' + t('app.title') + '</h2>' +
-      '  <button class="btn btn-link" data-action="rules">?</button>' +
+      '  <span class="topbar-right">' +
+      '    <button class="btn btn-link" data-action="toggleVoice">' + (g().voice ? '🔊' : '🔇') + '</button>' +
+      '    <button class="btn btn-link" data-action="rules">?</button>' +
+      '  </span>' +
       '</header>' +
       missionTrack() + voteTrackBar();
   }
@@ -868,7 +1035,8 @@
       if (saved && saved.game && !saved.game.winner) {
         state.setup = saved.setup || state.setup;
         state.game = saved.game;
-        state.screen = saved.screen === 'reveal' ? 'reveal' : 'board';
+        state.screen = (saved.screen === 'reveal' || saved.screen === 'ceremony')
+          ? saved.screen : 'board';
         timerResetTo(state.game.timerMin || 0);
       }
     },
@@ -891,10 +1059,12 @@
       state.game = newGame(names, {
         knownSpies: state.setup.knownSpies,
         commander: state.setup.commander,
+        voice: state.setup.voice,
         timerMin: state.setup.timerMin
       });
       state.screen = 'reveal';
       save();
+      speak(t('reveal.pass') + ' ' + state.game.players[0].name);
     },
 
     revealImHere: function () {
@@ -919,18 +1089,39 @@
       var game = g();
       if (!game.revealSeen) return;
       if (game.revealIdx + 1 >= nPlayers()) {
-        game.phase = 'team';
-        game.team = [];
-        state.screen = 'board';
-        timerResetTo(game.timerMin);
+        // Cérémonie d'ouverture si l'annonceur est actif et qu'il y a
+        // quelque chose à mettre en scène (complices ou Commandant).
+        if (game.voice && (game.knownSpies || game.commanderMode)) {
+          state.screen = 'ceremony';
+          save();
+        } else {
+          enterBoard();
+        }
       } else {
         game.revealIdx++;
         game.revealStage = 'pass';
         game.revealSeen = false;
         game.revealFlipped = false;
+        save();
+        speak(t('reveal.pass') + ' ' + game.players[game.revealIdx].name);
       }
+    },
+
+    cerStart: function () {
+      cer.running = true;
+      cerRun(0);
+      return 'noRender';
+    },
+    cerSkip: function () {
+      cerStop();
+      enterBoard();
+    },
+    toggleVoice: function () {
+      g().voice = !g().voice;
+      if (!g().voice) voiceStop();
       save();
     },
+    toggleVoiceSetup: function () { state.setup.voice = !state.setup.voice; },
 
     togglePlayer: function (el) {
       var game = g();
@@ -958,8 +1149,16 @@
       if (!g().votes.every(function (v) { return v !== null; })) return;
       resolveVote();
       vibrate(g().lastVote.approved ? 40 : [60, 60, 60]);
+      speak(t(g().lastVote.approved ? 'vote.approved' : 'vote.rejected'));
     },
-    afterVote: function () { afterVoteResult(); },
+    afterVote: function () {
+      afterVoteResult();
+      if (state.screen === 'gameover') {
+        speak(t(g().winner === 'res' ? 'over.resWin' : 'over.spyWin'));
+      } else if (g().phase === 'mission') {
+        speak(t('mission.pass') + ' ' + g().players[g().team[0]].name);
+      }
+    },
 
     missionImHere: function () {
       g().missionStage = 'pick';
@@ -986,8 +1185,19 @@
       g().revealCards[i].flipped = true;
       vibrate(20);
       save();
+      if (g().revealCards.every(function (c) { return c.flipped; })) {
+        var out = missionOutcome();
+        speak(t(out.result === 'success' ? 'mission.successResult' : 'mission.failResult'));
+      }
     },
-    missionDone: function () { finishMission(); },
+    missionDone: function () {
+      finishMission();
+      if (state.screen === 'gameover') {
+        speak(t(g().winner === 'res' ? 'over.resWin' : 'over.spyWin'));
+      } else if (g().phase === 'assassin') {
+        speak(t('assassin.title'));
+      }
+    },
 
     assassinPick: function (el) {
       g().assassinPick = parseInt(el.getAttribute('data-idx'), 10);
@@ -1004,6 +1214,7 @@
       state.screen = 'gameover';
       vibrate(wasCommander ? [80, 60, 80] : 40);
       save();
+      speak(t(wasCommander ? 'over.spyWin' : 'over.resWin'));
     },
 
     replaySame: function () {
@@ -1011,10 +1222,12 @@
       state.game = newGame(names, {
         knownSpies: g().knownSpies,
         commander: g().commanderMode,
+        voice: g().voice,
         timerMin: g().timerMin
       });
       state.screen = 'reveal';
       save();
+      speak(t('reveal.pass') + ' ' + state.game.players[0].name);
     },
 
     askQuit: function () { state.quitAsk = true; },
