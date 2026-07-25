@@ -11,9 +11,12 @@ compte, aucune donnée collectée.
 
 ## ✨ Fonctionnalités
 
-- **Distribution secrète des rôles** : chacun voit sa carte en maintenant le
-  doigt dessus (elle se cache dès qu'on relâche). Les espions découvrent leurs
-  complices.
+- **Distribution secrète des rôles** : chacun retourne sa carte d'un simple
+  toucher (animation 3D) et la re-cache avant de passer le téléphone. Les
+  espions découvrent leurs complices.
+- **Mode Commandant (optionnel)** : le Commandant connaît les espions ; si la
+  Résistance réussit 3 missions, l'Assassin des espions peut l'éliminer au
+  dernier moment pour voler la victoire.
 - **Suivi complet de la partie** : 5 missions, tailles d'équipe officielles,
   rotation du chef d'équipe, piste des votes rejetés (5 rejets = victoire des
   espions), règle des « 2 échecs » pour la mission 4 à partir de 7 joueurs.

@@ -33,22 +33,20 @@ async function main() {
   const state = () => page.evaluate(() => window.RESISTANCE_DEBUG.getState());
   const click = (sel) => page.click(sel);
 
-  // Visibilité RÉELLE de la face du rôle (display calculé, pas l'attribut :
-  // une régression CSS peut écraser [hidden] avec display:flex).
-  const frontVisible = () => page.evaluate(() => {
-    const el = document.querySelector('.role-front');
-    return !!el && getComputedStyle(el).display !== 'none';
+  // La face du rôle est-elle réellement montrée ? (carte retournée)
+  const cardFlipped = () => page.evaluate(() => {
+    const c = document.querySelector('.role-card');
+    return !!c && c.classList.contains('flipped');
   });
-
-  // Maintient la carte de rôle appuyée, vérifie le contenu, relâche.
-  async function holdCard(checkFn) {
-    const box = await page.locator('#hold-card').boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(550);
-    if (checkFn) await checkFn();
-    await page.mouse.up();
-  }
+  // Face cachée = carte non retournée ET face arrière du recto masquée en 3D.
+  const frontConcealed = () => page.evaluate(() => {
+    const c = document.querySelector('.role-card');
+    const f = document.querySelector('.role-front');
+    if (!c || !f) return false;
+    const cs = getComputedStyle(f);
+    const bf = cs.backfaceVisibility || cs.webkitBackfaceVisibility;
+    return !c.classList.contains('flipped') && bf === 'hidden';
+  });
 
   async function revealAll(shotSpy) {
     const st = await state();
@@ -56,21 +54,24 @@ async function main() {
     let spyShotDone = false;
     for (let i = 0; i < players.length; i++) {
       await click('[data-action="revealImHere"]');
-      assert.strictEqual(await frontVisible(), false, 'rôle invisible AVANT l’appui');
+      assert.strictEqual(await frontConcealed(), true, 'rôle caché avant le toucher');
+      // Premier toucher : la carte se retourne et montre le rôle.
+      await click('#hold-card');
+      await page.waitForTimeout(650);
+      assert.strictEqual(await cardFlipped(), true, 'carte retournée après le toucher');
       const isSpy = players[i].role === 'spy';
-      await holdCard(async () => {
-        assert.strictEqual(await frontVisible(), true, 'rôle visible pendant l’appui');
-        if (isSpy && shotSpy && !spyShotDone) {
-          await shot('03-role-espion');
-          spyShotDone = true;
-          // Les complices doivent être affichés (variante par défaut).
-          const txt = await page.locator('.role-front').innerText();
-          const others = players.filter((p, j) => p.role === 'spy' && j !== i);
-          for (const o of others) assert.ok(txt.includes(o.name), 'complice affiché : ' + o.name);
-        }
-      });
-      // Relâchée → cachée, et le bouton est déverrouillé.
-      assert.strictEqual(await frontVisible(), false, 'rôle invisible après relâchement');
+      if (isSpy && shotSpy && !spyShotDone) {
+        await shot('03-role-espion');
+        spyShotDone = true;
+        // Les complices doivent être affichés (variante par défaut).
+        const txt = await page.locator('.role-front').innerText();
+        const others = players.filter((p, j) => p.role === 'spy' && j !== i);
+        for (const o of others) assert.ok(txt.includes(o.name), 'complice affiché : ' + o.name);
+      }
+      // Second toucher : la carte se cache à nouveau.
+      await click('#hold-card');
+      await page.waitForTimeout(650);
+      assert.strictEqual(await cardFlipped(), false, 'carte cachée après le second toucher');
       await click('#reveal-next:not([disabled])');
     }
   }
@@ -245,6 +246,59 @@ async function main() {
   assert.strictEqual(st.game.winner, 'res');
   await shot('09-fin-resistance');
   console.log('  ✓ partie C : victoire de la Résistance (3 succès)');
+
+  // --- Partie D : mode Commandant, l'Assassin vise juste ------------
+  await click('[data-action="toSetup"]');
+  await click('[data-action="toggleCommander"]');
+  await click('[data-action="startGame"]');
+  await revealAll(false);
+  st = await state();
+  assert.strictEqual(st.game.commanderMode, true);
+  const cmdIdx = st.game.players.findIndex(p => p.special === 'commander');
+  const assIdx = st.game.players.findIndex(p => p.special === 'assassin');
+  assert.ok(cmdIdx !== -1 && st.game.players[cmdIdx].role === 'res', 'le Commandant est un résistant');
+  assert.ok(assIdx !== -1 && st.game.players[assIdx].role === 'spy', 'l’Assassin est un espion');
+  let resD = st.game.players.map((p, i) => p.role === 'res' ? i : -1).filter(i => i !== -1);
+  for (let round = 0; round < 3; round++) {
+    await pickTeam(resD.slice(0, [2, 3, 2][round]));
+    await voteAll('up', true);
+    await runMission(true);
+    await click('[data-action="missionDone"]');
+  }
+  st = await state();
+  assert.strictEqual(st.game.phase, 'assassin', 'phase d’assassinat après 3 succès');
+  assert.strictEqual(st.game.winner, null, 'pas encore de vainqueur');
+  await shot('10-assassinat');
+  await click(`[data-action="assassinPick"][data-idx="${cmdIdx}"]`);
+  await click('[data-action="assassinConfirm"]');
+  st = await state();
+  assert.strictEqual(st.screen, 'gameover');
+  assert.strictEqual(st.game.winner, 'spy');
+  assert.strictEqual(st.game.winReason, 'assassin');
+  await shot('11-fin-assassinat');
+  console.log('  ✓ partie D : Commandant éliminé, les espions volent la victoire');
+
+  // --- Partie E : l'Assassin se trompe → la Résistance gagne --------
+  await click('[data-action="replaySame"]');
+  await revealAll(false);
+  st = await state();
+  assert.strictEqual(st.game.commanderMode, true, 'mode Commandant conservé au rejeu');
+  const cmdE = st.game.players.findIndex(p => p.special === 'commander');
+  const resE = st.game.players.map((p, i) => p.role === 'res' ? i : -1).filter(i => i !== -1);
+  for (let round = 0; round < 3; round++) {
+    await pickTeam(resE.slice(0, [2, 3, 2][round]));
+    await voteAll('up', true);
+    await runMission(true);
+    await click('[data-action="missionDone"]');
+  }
+  const wrongTarget = resE.find(i => i !== cmdE);
+  await click(`[data-action="assassinPick"][data-idx="${wrongTarget}"]`);
+  await click('[data-action="assassinConfirm"]');
+  st = await state();
+  assert.strictEqual(st.screen, 'gameover');
+  assert.strictEqual(st.game.winner, 'res');
+  assert.ok(st.game.assassination && !st.game.assassination.wasCommander);
+  console.log('  ✓ partie E : l’Assassin se trompe, la Résistance l’emporte');
 
   // --- Reprise de partie (sauvegarde locale) ------------------------
   await click('[data-action="toSetup"]');

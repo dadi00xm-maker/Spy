@@ -8,9 +8,39 @@
 
   var STORAGE_KEY = 'resistance.save.v1';
   var LANG_KEY = 'resistance.lang';
-  var HOLD_DELAY_MS = 350; // durée d'appui avant de révéler une carte
 
   var app = document.getElementById('app');
+
+  /* Icônes vectorielles du jeu (dessins originaux). Elles héritent de la
+     couleur du texte via currentColor. */
+  var ICONS = {
+    spy: '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<ellipse cx="50" cy="34" rx="31" ry="6" fill="currentColor"/>' +
+      '<path d="M30 33 Q30 11 50 11 Q70 11 70 33 Z" fill="currentColor"/>' +
+      '<path d="M35 38 h30 v9 q0 9 -15 9 q-15 0 -15 -9 Z" fill="currentColor"/>' +
+      '<rect x="34" y="40" width="32" height="8" rx="4" fill="#0b0f1c"/>' +
+      '<circle cx="43" cy="44" r="3.4" fill="#fff" opacity="0.92"/>' +
+      '<circle cx="57" cy="44" r="3.4" fill="#fff" opacity="0.92"/>' +
+      '<path d="M18 88 Q22 61 40 57 L50 65 L60 57 Q78 61 82 88 Z" fill="currentColor"/>' +
+      '<path d="M40 57 L50 65 L45 79 L37 63 Z" fill="#0b0f1c" opacity="0.3"/>' +
+      '<path d="M60 57 L50 65 L55 79 L63 63 Z" fill="#0b0f1c" opacity="0.3"/>' +
+      '</svg>',
+    fist: '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<rect x="29" y="16" width="12" height="32" rx="6" fill="currentColor"/>' +
+      '<rect x="43" y="11" width="12" height="37" rx="6" fill="currentColor"/>' +
+      '<rect x="57" y="16" width="12" height="32" rx="6" fill="currentColor"/>' +
+      '<rect x="70" y="24" width="11" height="24" rx="5.5" fill="currentColor"/>' +
+      '<rect x="15" y="36" width="13" height="27" rx="6.5" fill="currentColor"/>' +
+      '<path d="M26 46 h49 q8 0 8 10 v6 q0 20 -21 26 h-25 q-19 -5 -19 -25 v-9 q0 -8 8 -8 Z" fill="currentColor"/>' +
+      '</svg>',
+    commander: '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<circle cx="50" cy="50" r="43" fill="#12172b"/>' +
+      '<circle cx="50" cy="50" r="43" fill="none" stroke="currentColor" stroke-width="5"/>' +
+      '<path d="M50 15 L57 36 L79 36 L61 49 L68 71 L50 58 L32 71 L39 49 L21 36 L43 36 Z" fill="currentColor"/>' +
+      '<path d="M35 66 L50 56 L65 66 v8 L50 64 L35 74 Z" fill="#fff" opacity="0.95"/>' +
+      '<path d="M35 78 L50 68 L65 78 v8 L50 76 L35 86 Z" fill="#fff" opacity="0.7"/>' +
+      '</svg>'
+  };
 
   /* ------------------------------------------------------------------ */
   /* État                                                                */
@@ -24,6 +54,7 @@
       count: 5,
       names: [],
       knownSpies: true,
+      commander: false,
       timerMin: 0
     },
     game: null,
@@ -35,28 +66,38 @@
   function newGame(names, options) {
     var n = names.length;
     var roles = RULES.assignRoles(n);
+    var players = names.map(function (name, i) {
+      return { name: name, role: roles[i], special: null };
+    });
+    if (options.commander) {
+      var sp = RULES.specialRoles(roles);
+      players[sp.commander].special = 'commander';
+      players[sp.assassin].special = 'assassin';
+    }
     return {
-      players: names.map(function (name, i) {
-        return { name: name, role: roles[i] };
-      }),
+      players: players,
       knownSpies: options.knownSpies,
+      commanderMode: !!options.commander,
       timerMin: options.timerMin,
       round: 0,
       leader: Math.floor(Math.random() * n),
       voteTrack: 0,
       missions: [null, null, null, null, null],
-      phase: 'reveal', // reveal | team | vote | voteResult | mission | missionReveal
+      phase: 'reveal', // reveal | team | vote | voteResult | mission | missionReveal | assassin
       revealIdx: 0,
       revealStage: 'pass', // pass | card
       revealSeen: false,
+      revealFlipped: false,
       team: [],
       votes: [],
       lastVote: null,
       missionIdx: 0,
-      missionStage: 'pass', // pass | pick | done
+      missionStage: 'pass', // pass | pick
       missionPick: null,
       missionChoices: [],
       revealCards: [],
+      assassinPick: null,
+      assassination: null,
       winner: null,
       winReason: null
     };
@@ -205,6 +246,12 @@
       .map(function (x) { return x.p.name; });
   }
 
+  function spyNames() {
+    return g().players
+      .filter(function (p) { return p.role === 'spy'; })
+      .map(function (p) { return p.name; });
+  }
+
   function startVote() {
     g().phase = 'vote';
     g().votes = g().players.map(function () { return null; });
@@ -278,7 +325,11 @@
       leader: g().leader
     };
     var w = RULES.winner(g().missions);
-    if (w) {
+    if (w === 'res' && g().commanderMode) {
+      // Dernière chance des espions : tenter d'éliminer le Commandant.
+      g().assassinPick = null;
+      g().phase = 'assassin';
+    } else if (w) {
       g().winner = w;
       g().winReason = 'missions';
       state.screen = 'gameover';
@@ -305,7 +356,6 @@
       case 'gameover': app.innerHTML = viewGameOver(); break;
       case 'rules': app.innerHTML = viewRules(); break;
     }
-    bindHoldAreas();
     updateTimerChip();
   }
 
@@ -371,6 +421,10 @@
       '      <span>' + t('setup.knownSpies') + '<small>' + t('setup.knownSpiesHint') + '</small></span>' +
       '      <span class="switch' + (state.setup.knownSpies ? ' on' : '') + '"></span>' +
       '    </button>' +
+      '    <button class="opt-row" data-action="toggleCommander">' +
+      '      <span>★ ' + t('setup.commander') + '<small>' + t('setup.commanderHint') + '</small></span>' +
+      '      <span class="switch' + (state.setup.commander ? ' on' : '') + '"></span>' +
+      '    </button>' +
       '    <button class="opt-row" data-action="cycleTimer">' +
       '      <span>' + t('setup.timer') + '</span>' +
       '      <span class="opt-value">' + timerLabel + '</span>' +
@@ -398,19 +452,32 @@
         '</div>';
     }
 
-    // Stage « card » : appui long pour révéler.
+    // Stage « card » : toucher la carte pour la retourner (animation 3D).
     var isSpy = p.role === 'spy';
-    var roleTitle = isSpy ? t('reveal.youAreSpy') : t('reveal.youAreRes');
-    var roleHint = isSpy ? t('reveal.spyHint') : t('reveal.resHint');
-    var accomplices = '';
+    var isCommander = p.special === 'commander';
+    var faceCls = isSpy ? 'spy' : (isCommander ? 'commander' : 'res');
+    var roleTitle = isSpy ? t('reveal.youAreSpy')
+      : (isCommander ? t('reveal.youAreCommander') : t('reveal.youAreRes'));
+    var roleHint = isSpy ? t('reveal.spyHint')
+      : (isCommander ? t('reveal.commanderHint') : t('reveal.resHint'));
+    var icon = isSpy ? ICONS.spy : (isCommander ? ICONS.commander : ICONS.fist);
+    var badge = (p.special === 'assassin')
+      ? '<span class="role-badge">🗡 ' + t('reveal.assassinBadge') + '</span>' : '';
+    var extra = '';
     if (isSpy) {
       if (game.knownSpies) {
         var others = spiesOf(game.revealIdx);
-        accomplices = '<p class="accomplices-label">' + t('reveal.accomplices') + '</p>' +
+        extra = '<p class="accomplices-label">' + t('reveal.accomplices') + '</p>' +
           '<p class="accomplices">' + others.map(esc).join(' · ') + '</p>';
       } else {
-        accomplices = '<p class="accomplices-label">' + t('reveal.blindSpies') + '</p>';
+        extra = '<p class="accomplices-label">' + t('reveal.blindSpies') + '</p>';
       }
+      if (p.special === 'assassin') {
+        extra += '<p class="accomplices-label">' + t('reveal.assassinHint') + '</p>';
+      }
+    } else if (isCommander) {
+      extra = '<p class="accomplices-label">' + t('reveal.spiesAre') + '</p>' +
+        '<p class="accomplices">' + spyNames().map(esc).join(' · ') + '</p>';
     }
     var nextLabel = game.revealIdx + 1 >= nPlayers() ? t('reveal.startGame') : t('reveal.next');
     var nextBtn = '<button class="btn btn-primary btn-big" id="reveal-next" data-action="revealNext"' +
@@ -420,17 +487,21 @@
       '<div class="screen reveal">' +
       '  <header class="topbar"><span></span><h2>' + esc(p.name) + '</h2>' +
       '    <span class="progress">' + progress + '</span></header>' +
-      '  <p class="hint center">' + t('reveal.holdHint') + '</p>' +
+      '  <p class="hint center">' + t('reveal.tapHint') + '</p>' +
       '  <div class="role-card-wrap">' +
-      '    <div class="role-card" id="hold-card">' +
-      '      <div class="role-back">' +
-      '        <div class="role-back-stamp">' + t('reveal.secret') + '</div>' +
-      '      </div>' +
-      '      <div class="role-front ' + (isSpy ? 'spy' : 'res') + '" hidden>' +
-      '        <div class="role-title">' + roleTitle + '</div>' +
-      '        <div class="role-icon">' + (isSpy ? '🕶️' : '✊') + '</div>' +
-      '        <p class="role-hint">' + roleHint + '</p>' +
-      accomplices +
+      '    <div class="role-card' + (game.revealFlipped ? ' flipped' : '') + '" id="hold-card"' +
+      '         data-action="flipRole" role="button" tabindex="0">' +
+      '      <div class="role-inner">' +
+      '        <div class="role-back">' +
+      '          <div class="role-back-stamp">' + t('reveal.secret') + '</div>' +
+      '        </div>' +
+      '        <div class="role-front ' + faceCls + '">' +
+      '          <div class="role-title">' + roleTitle + '</div>' +
+      badge +
+      '          <div class="role-icon">' + icon + '</div>' +
+      '          <p class="role-hint">' + roleHint + '</p>' +
+      extra +
+      '        </div>' +
       '      </div>' +
       '    </div>' +
       '  </div>' +
@@ -499,9 +570,32 @@
       case 'voteResult': html += viewVoteResult(); break;
       case 'mission': html += viewMission(); break;
       case 'missionReveal': html += viewMissionReveal(); break;
+      case 'assassin': html += viewAssassin(); break;
     }
     html += quitModal() + '</div>';
     return html;
+  }
+
+  function viewAssassin() {
+    var game = g();
+    var pick = game.assassinPick;
+    var chips = game.players.map(function (p, i) {
+      if (p.role === 'spy') return ''; // le Commandant est forcément un résistant
+      var sel = pick === i;
+      return '<button class="pchip' + (sel ? ' sel danger' : '') + '" data-action="assassinPick" data-idx="' + i + '">' +
+        esc(p.name) + (sel ? '<span class="check">🗡</span>' : '') + '</button>';
+    }).join('');
+    var confirmBtn = pick === null
+      ? '<button class="btn btn-danger btn-big" disabled>' + t('assassin.choose') + '</button>'
+      : '<button class="btn btn-danger btn-big" data-action="assassinConfirm">' +
+        t('assassin.pick', { name: esc(game.players[pick].name) }) + '</button>';
+    return '' +
+      '<section class="phase">' +
+      '  <h3>🗡 ' + t('assassin.title') + '</h3>' +
+      '  <p class="hint">' + t('assassin.hint') + '</p>' +
+      '  <div class="pgrid">' + chips + '</div>' +
+      confirmBtn +
+      '</section>';
   }
 
   function viewTeam() {
@@ -626,10 +720,10 @@
       '  <div class="mission-cards">' +
       '    <button class="mcard success' + (pick === true ? ' picked' : '') + (pick === false ? ' dim' : '') + '"' +
       '      data-action="pickSuccess">' +
-      '      <span class="mcard-icon">🛡️</span>' + t('mission.success') + '</button>' +
+      '      <span class="mcard-icon">' + ICONS.fist + '</span>' + t('mission.success') + '</button>' +
       '    <button class="mcard fail' + (pick === false ? ' picked' : '') + (pick === true ? ' dim' : '') + '"' +
       '      data-action="pickFail"' + (isRes ? ' disabled' : '') + '>' +
-      '      <span class="mcard-icon">💣</span>' + t('mission.fail') + '</button>' +
+      '      <span class="mcard-icon">' + ICONS.spy + '</span>' + t('mission.fail') + '</button>' +
       '  </div>' +
       (isRes ? '<p class="hint center">' + t('mission.resOnly') + '</p>' : '') +
       confirmBar +
@@ -644,7 +738,7 @@
         return '<button class="rcard back" data-action="flipCard" data-idx="' + i + '">?</button>';
       }
       return '<div class="rcard ' + (c.card === 'S' ? 'ok' : 'ko') + '">' +
-        (c.card === 'S' ? '🛡️' : '💣') + '</div>';
+        (c.card === 'S' ? ICONS.fist : ICONS.spy) + '</div>';
     }).join('');
 
     var outcomeHtml = '';
@@ -677,18 +771,29 @@
     var game = g();
     var tal = RULES.tally(game.missions);
     var resWin = game.winner === 'res';
-    var reason = game.winReason === 'votes'
-      ? '<p class="hint center">' + t('over.byVotes') + '</p>' : '';
+    var reason = '';
+    if (game.winReason === 'votes') {
+      reason = '<p class="hint center">' + t('over.byVotes') + '</p>';
+    }
+    if (game.assassination) {
+      reason += '<p class="hint center">🗡 ' +
+        t(game.assassination.wasCommander ? 'over.assassinated' : 'over.survived',
+          { name: esc(game.assassination.name) }) + '</p>';
+    }
     var roles = game.players.map(function (p) {
       var isSpy = p.role === 'spy';
-      return '<div class="role-row ' + (isSpy ? 'spy' : 'res') + '">' +
+      var label = isSpy ? t('role.spy') : t('role.res');
+      if (p.special === 'commander') label = '★ ' + t('role.commander');
+      if (p.special === 'assassin') label += ' · 🗡 ' + t('role.assassin');
+      return '<div class="role-row ' + (isSpy ? 'spy' : 'res') +
+        (p.special === 'commander' ? ' commander' : '') + '">' +
         '<span>' + esc(p.name) + '</span>' +
-        '<span>' + (isSpy ? '🕶️ ' + t('role.spy') : '✊ ' + t('role.res')) + '</span></div>';
+        '<span>' + label + '</span></div>';
     }).join('');
     return '' +
       '<div class="screen gameover ' + (resWin ? 'res-bg' : 'spy-bg') + '">' +
       '  <div class="over-banner ' + (resWin ? 'res' : 'spy') + '">' +
-      '    <div class="over-icon">' + (resWin ? '✊' : '🕶️') + '</div>' +
+      '    <div class="over-icon">' + (resWin ? ICONS.fist : ICONS.spy) + '</div>' +
       '    <h1>' + (resWin ? t('over.resWin') : t('over.spyWin')) + '</h1>' +
       '    <p class="hint center">' + t('over.score', { s: tal.success, f: tal.fail }) + '</p>' +
       reason +
@@ -732,55 +837,6 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Carte à révélation (appui maintenu)                                 */
-  /* ------------------------------------------------------------------ */
-
-  var holdTimer = null;
-
-  function bindHoldAreas() {
-    var card = document.getElementById('hold-card');
-    if (!card) return;
-    var back = card.querySelector('.role-back');
-    var front = card.querySelector('.role-front');
-
-    function show() {
-      front.hidden = false;
-      back.hidden = true;
-      vibrate(30);
-      if (!g().revealSeen) {
-        g().revealSeen = true;
-        save();
-        // Pas de re-rendu pendant l'appui : on active juste le bouton.
-        var btn = document.getElementById('reveal-next');
-        if (btn) btn.disabled = false;
-      }
-    }
-
-    function hide() {
-      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
-      var c = document.getElementById('hold-card');
-      if (!c) return;
-      c.querySelector('.role-front').hidden = true;
-      c.querySelector('.role-back').hidden = false;
-    }
-
-    function down(e) {
-      e.preventDefault();
-      if (holdTimer) clearTimeout(holdTimer);
-      holdTimer = setTimeout(show, HOLD_DELAY_MS);
-    }
-
-    card.addEventListener('pointerdown', down);
-    card.addEventListener('pointerup', hide);
-    card.addEventListener('pointercancel', hide);
-    card.addEventListener('pointerleave', hide);
-    // iOS : bloque la sélection de texte et le menu système pendant
-    // l'appui long, qui interrompaient la révélation (pointercancel).
-    card.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
-    card.addEventListener('touchend', hide);
-  }
-
-  /* ------------------------------------------------------------------ */
   /* Actions                                                             */
   /* ------------------------------------------------------------------ */
 
@@ -813,6 +869,7 @@
     countMinus: function () { if (state.setup.count > RULES.MIN_PLAYERS) state.setup.count--; },
     countPlus: function () { if (state.setup.count < RULES.MAX_PLAYERS) state.setup.count++; },
     toggleKnownSpies: function () { state.setup.knownSpies = !state.setup.knownSpies; },
+    toggleCommander: function () { state.setup.commander = !state.setup.commander; },
     cycleTimer: function () {
       var opts = [0, 3, 5, 10];
       var i = opts.indexOf(state.setup.timerMin);
@@ -826,13 +883,31 @@
       }
       state.game = newGame(names, {
         knownSpies: state.setup.knownSpies,
+        commander: state.setup.commander,
         timerMin: state.setup.timerMin
       });
       state.screen = 'reveal';
       save();
     },
 
-    revealImHere: function () { g().revealStage = 'card'; g().revealSeen = false; save(); },
+    revealImHere: function () {
+      g().revealStage = 'card';
+      g().revealSeen = false;
+      g().revealFlipped = false;
+      save();
+    },
+    flipRole: function (el) {
+      var game = g();
+      game.revealFlipped = !game.revealFlipped;
+      if (game.revealFlipped) game.revealSeen = true;
+      save();
+      // Pas de re-rendu : on laisse l'animation CSS jouer.
+      el.classList.toggle('flipped', game.revealFlipped);
+      var btn = document.getElementById('reveal-next');
+      if (btn && game.revealSeen) btn.disabled = false;
+      vibrate(20);
+      return 'noRender';
+    },
     revealNext: function () {
       var game = g();
       if (!game.revealSeen) return;
@@ -845,6 +920,7 @@
         game.revealIdx++;
         game.revealStage = 'pass';
         game.revealSeen = false;
+        game.revealFlipped = false;
       }
       save();
     },
@@ -900,10 +976,28 @@
     },
     missionDone: function () { finishMission(); },
 
+    assassinPick: function (el) {
+      g().assassinPick = parseInt(el.getAttribute('data-idx'), 10);
+      save();
+    },
+    assassinConfirm: function () {
+      var game = g();
+      if (game.assassinPick === null) return;
+      var target = game.players[game.assassinPick];
+      var wasCommander = target.special === 'commander';
+      game.assassination = { name: target.name, wasCommander: wasCommander };
+      game.winner = wasCommander ? 'spy' : 'res';
+      game.winReason = wasCommander ? 'assassin' : 'missions';
+      state.screen = 'gameover';
+      vibrate(wasCommander ? [80, 60, 80] : 40);
+      save();
+    },
+
     replaySame: function () {
       var names = g().players.map(function (p) { return p.name; });
       state.game = newGame(names, {
         knownSpies: g().knownSpies,
+        commander: g().commanderMode,
         timerMin: g().timerMin
       });
       state.screen = 'reveal';

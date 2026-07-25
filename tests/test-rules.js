@@ -68,6 +68,19 @@ check('distribution des rôles : bons effectifs, mélange stable avec rng inject
   assert.deepStrictEqual(a, b);
 });
 
+check('rôles spéciaux : Commandant résistant, Assassin espion', () => {
+  const roles = ['spy', 'res', 'spy', 'res', 'res', 'res', 'res'];
+  for (let k = 0; k < 25; k++) {
+    const sp = RULES.specialRoles(roles);
+    assert.strictEqual(roles[sp.commander], 'res');
+    assert.strictEqual(roles[sp.assassin], 'spy');
+  }
+  // rng déterministe → choix déterministe
+  const a = RULES.specialRoles(roles, () => 0.99);
+  const b = RULES.specialRoles(roles, () => 0.99);
+  assert.deepStrictEqual(a, b);
+});
+
 check('shuffle conserve les éléments', () => {
   const arr = [1, 2, 3, 4, 5, 6];
   const out = RULES.shuffle(arr);

@@ -52,6 +52,22 @@ var RULES = (function () {
     return shuffle(roles, rng);
   }
 
+  // Mode Commandant : un résistant devient Commandant (il connaît les
+  // espions), un espion devient Assassin (il peut l'éliminer en fin de
+  // partie pour voler la victoire).
+  function specialRoles(roles, rng) {
+    var random = rng || Math.random;
+    var resIdx = [];
+    var spyIdx = [];
+    for (var i = 0; i < roles.length; i++) {
+      (roles[i] === 'spy' ? spyIdx : resIdx).push(i);
+    }
+    return {
+      commander: resIdx[Math.floor(random() * resIdx.length)],
+      assassin: spyIdx[Math.floor(random() * spyIdx.length)]
+    };
+  }
+
   // Résout une mission à partir du nombre de cartes Échec jouées.
   function missionResult(nPlayers, missionIndex, failCards) {
     var needed = failsNeeded(nPlayers, missionIndex);
@@ -96,6 +112,7 @@ var RULES = (function () {
     failsNeeded: failsNeeded,
     shuffle: shuffle,
     assignRoles: assignRoles,
+    specialRoles: specialRoles,
     missionResult: missionResult,
     voteApproved: voteApproved,
     tally: tally,

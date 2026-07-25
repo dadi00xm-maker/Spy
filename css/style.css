@@ -13,6 +13,7 @@
   --red: #e5484d;
   --red-2: #b83338;
   --gold: #f2c14e;
+  --purple: #8b5cf6;
   --ok: #3ecf8e;
   --radius: 16px;
 }
@@ -219,14 +220,24 @@ body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none; /* iOS : pas de loupe/menu sur appui long */
-  touch-action: none;
+  touch-action: manipulation;
   cursor: pointer;
+  perspective: 1200px;
 }
 .role-card * {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+
+/* Retournement 3D : un toucher bascule la classe .flipped */
+.role-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.3, 0.8, 0.3, 1);
+}
+.role-card.flipped .role-inner { transform: rotateY(180deg); }
 
 .role-back, .role-front {
   position: absolute;
@@ -239,7 +250,10 @@ body {
   gap: 12px;
   padding: 22px;
   text-align: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
+.role-front { transform: rotateY(180deg); }
 
 .role-back {
   background:
@@ -260,10 +274,26 @@ body {
 
 .role-front.res { background: linear-gradient(160deg, #17335f, #0e2242); border: 1.5px solid var(--blue); }
 .role-front.spy { background: linear-gradient(160deg, #521b26, #2b0d13); border: 1.5px solid var(--red); }
+.role-front.commander { background: linear-gradient(160deg, #2d2258, #171034); border: 1.5px solid var(--purple); }
 .role-title { font-size: 1.7rem; font-weight: 800; letter-spacing: 0.14em; }
 .role-front.res .role-title { color: var(--blue); }
 .role-front.spy .role-title { color: var(--red); }
+.role-front.commander .role-title { color: #a78bfa; }
 .role-icon { font-size: 3.4rem; }
+.role-icon svg { width: 92px; height: 92px; display: block; }
+.role-front.res .role-icon { color: #9cc2ff; }
+.role-front.spy .role-icon { color: #ff9ba0; }
+.role-front.commander .role-icon { color: #c4b5fd; }
+.role-badge {
+  display: inline-block;
+  border: 1.5px solid var(--red);
+  color: #ffb3b6;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+}
 .role-hint { color: var(--text); opacity: 0.85; margin: 0; line-height: 1.4; }
 .accomplices-label { color: var(--muted); font-size: 0.85rem; margin: 8px 0 0; }
 .accomplices { font-weight: 800; font-size: 1.15rem; margin: 2px 0 0; }
@@ -315,6 +345,8 @@ body {
   transition: border-color 0.12s ease, background 0.12s ease;
 }
 .pchip.sel { border-color: var(--blue); background: #14324d; }
+.pchip.sel.danger { border-color: var(--red); background: #3c151c; }
+.pchip.sel.danger .check { color: var(--red); }
 .pchip .check { margin-left: auto; color: var(--blue); font-weight: 800; }
 .pchip .star, .vote-name { font-weight: 600; }
 .star { color: var(--gold); }
@@ -377,6 +409,9 @@ body {
 }
 .mcard:active { transform: scale(0.97); }
 .mcard-icon { font-size: 2.6rem; }
+.mcard-icon svg { width: 58px; height: 58px; display: block; }
+.mcard.success .mcard-icon { color: #9cc2ff; }
+.mcard.fail .mcard-icon { color: #ff9ba0; }
 .mcard.success { background: linear-gradient(160deg, #17335f, #0e2242); border: 2px solid var(--blue); }
 .mcard.fail { background: linear-gradient(160deg, #521b26, #2b0d13); border: 2px solid var(--red); }
 .mcard.picked { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18); }
@@ -400,8 +435,9 @@ body {
   color: var(--muted);
   cursor: pointer;
 }
-.rcard.ok { background: #14324d; border-color: var(--blue); }
-.rcard.ko { background: #3c151c; border-color: var(--red); }
+.rcard.ok { background: #14324d; border-color: var(--blue); color: #9cc2ff; }
+.rcard.ko { background: #3c151c; border-color: var(--red); color: #ff9ba0; }
+.rcard svg { width: 36px; height: 36px; display: block; }
 
 /* --- Minuteur ----------------------------------------------------- */
 
@@ -428,7 +464,10 @@ body {
 .over-banner.res { background: linear-gradient(170deg, #16345f, #0d1c36); border-color: var(--blue); }
 .over-banner.spy { background: linear-gradient(170deg, #55202b, #260c12); border-color: var(--red); }
 .over-banner h1 { margin: 6px 0 4px; font-size: 1.6rem; letter-spacing: 0.05em; }
-.over-icon { font-size: 3rem; }
+.over-icon { font-size: 3rem; display: flex; justify-content: center; }
+.over-icon svg { width: 72px; height: 72px; }
+.over-banner.res .over-icon { color: #9cc2ff; }
+.over-banner.spy .over-icon { color: #ff9ba0; }
 
 .role-list { display: flex; flex-direction: column; gap: 6px; }
 .role-row {
@@ -440,6 +479,7 @@ body {
 }
 .role-row.res { border-left-color: var(--blue); }
 .role-row.spy { border-left-color: var(--red); }
+.role-row.commander { border-left-color: var(--purple); }
 
 /* --- Règles ------------------------------------------------------- */
 
