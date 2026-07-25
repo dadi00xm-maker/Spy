@@ -36,12 +36,13 @@ compte, aucune donnée collectée.
 
 ### En ligne (GitHub Pages)
 
-Le site est déployé automatiquement par GitHub Actions à chaque push sur
-`main` : `https://<votre-compte>.github.io/<nom-du-depot>/`
+**👉 https://dadi00xm-maker.github.io/Spy/**
 
-> Si le déploiement ne se lance pas, vérifier dans **Settings → Pages** que la
-> source est **GitHub Actions**, puis relancer le workflow « Déployer sur
-> GitHub Pages ».
+À chaque push sur `main`, GitHub Actions relance les tests puis publie le
+site sur la branche `gh-pages`, servie par GitHub Pages.
+
+> Si le site ne répond pas, vérifier dans **Settings → Pages** que la source
+> est **Deploy from a branch** avec la branche **gh-pages** (dossier `/`).
 
 Sur téléphone, ouvrir le lien puis « **Ajouter à l'écran d'accueil** » :
 l'app s'installe et fonctionne ensuite sans connexion.
