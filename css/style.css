@@ -31,6 +31,18 @@
   --glow-2: #2a1020;
   --overlay: rgba(4, 7, 15, 0.75);
   --stripe: rgba(255, 255, 255, 0.03);
+  --face-res-1: #1b2b4c;
+  --face-res-2: #101a30;
+  --face-res-line: #3d5a8c;
+  --face-res-ink: #7fa7e8;
+  --face-spy-1: #2e1e2c;
+  --face-spy-2: #170f1c;
+  --face-spy-line: #74404c;
+  --face-spy-ink: #d98b93;
+  --face-cmd-1: #262047;
+  --face-cmd-2: #14102a;
+  --face-cmd-line: #5b4a94;
+  --face-cmd-ink: #a795e0;
   --radius: 16px;
 }
 
@@ -66,6 +78,18 @@ body.theme-light {
   --glow-2: #f7dfe7;
   --overlay: rgba(23, 32, 58, 0.4);
   --stripe: rgba(23, 32, 58, 0.05);
+  --face-res-1: #e8effc;
+  --face-res-2: #d8e4f8;
+  --face-res-line: #9db9e6;
+  --face-res-ink: #2f5cb0;
+  --face-spy-1: #fbeaee;
+  --face-spy-2: #f3d9e0;
+  --face-spy-line: #dfa4b0;
+  --face-spy-ink: #a83a48;
+  --face-cmd-1: #efe9fc;
+  --face-cmd-2: #e2d8f6;
+  --face-cmd-line: #b9a5e8;
+  --face-cmd-ink: #6a45c2;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -324,16 +348,21 @@ body {
   font-size: 1.3rem;
 }
 
-/* Faces de rôle volontairement IDENTIQUES pour tous les camps : aucune
-   couleur repérable de loin — seul le texte (lisible de près) diffère. */
-.role-front.res, .role-front.spy, .role-front.commander {
-  background: linear-gradient(160deg, var(--card-face-1), var(--card-face-2));
-  border: 1.5px solid var(--card-line);
-}
+/* Faces de rôle aux teintes SOURDES : même structure et luminosité
+   proche pour tous les camps (rien de repérable de loin ni dans un
+   reflet), mais de près chacun sent sa couleur. */
+.role-front.res { background: linear-gradient(160deg, var(--face-res-1), var(--face-res-2)); border: 1.5px solid var(--face-res-line); }
+.role-front.spy { background: linear-gradient(160deg, var(--face-spy-1), var(--face-spy-2)); border: 1.5px solid var(--face-spy-line); }
+.role-front.commander { background: linear-gradient(160deg, var(--face-cmd-1), var(--face-cmd-2)); border: 1.5px solid var(--face-cmd-line); }
 .role-title { font-size: 1.7rem; font-weight: 800; letter-spacing: 0.14em; color: var(--text); }
+.role-front.res .role-title { color: var(--face-res-ink); }
+.role-front.spy .role-title { color: var(--face-spy-ink); }
+.role-front.commander .role-title { color: var(--face-cmd-ink); }
 .role-icon { font-size: 3.4rem; }
 .role-icon svg { width: 92px; height: 92px; display: block; }
-.role-front .role-icon { color: var(--icon-soft); }
+.role-front.res .role-icon { color: var(--face-res-ink); }
+.role-front.spy .role-icon { color: var(--face-spy-ink); }
+.role-front.commander .role-icon { color: var(--face-cmd-ink); }
 .role-badge {
   display: inline-block;
   border: 1.5px solid var(--card-line);
