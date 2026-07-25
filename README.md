@@ -53,9 +53,11 @@ compte, aucune donnée collectée.
 
 ## 🚀 Jouer
 
-### En ligne (GitHub Pages)
+### En ligne
 
-**👉 https://dadi00xm-maker.github.io/Spy/**
+**👉 https://spy.labelnou.com**
+
+(l'ancienne adresse `dadi00xm-maker.github.io/Spy` redirige automatiquement)
 
 À chaque push sur `main`, GitHub Actions relance les tests puis publie le
 site sur la branche `gh-pages`, servie par GitHub Pages.
