@@ -150,14 +150,17 @@ async function main() {
   assert.ok(await page.evaluate(() => !document.body.classList.contains('theme-light')), 'retour au thème sombre');
   console.log('  ✓ bascule thème clair/sombre');
 
-  // Écran des règles modernisé : deux camps, trois étapes, pièges.
+  // Écran des règles : tutoriel en pages avec illustrations.
   await click('[data-action="rules"]');
-  assert.strictEqual(await page.locator('.camp-card').count(), 2, 'cartes des deux camps');
-  assert.strictEqual(await page.locator('.step-num').count(), 3, '3 étapes');
-  assert.ok(await page.locator('.trap').count() >= 4, 'pièges listés');
+  assert.ok(await page.locator('.tut-page').count() >= 6, 'pages du tutoriel');
+  assert.strictEqual(await page.locator('.camp-mini').count(), 2, 'illustration des camps');
+  assert.ok(await page.locator('.trap').count() >= 5, 'pièges listés');
+  await click('[data-action="tutNext"]');
+  await page.waitForTimeout(500);
+  assert.ok(await page.evaluate(() => document.getElementById('tut-pager').scrollLeft > 50), 'le pager défile');
   await shot('16-regles');
   await click('[data-action="rulesBack"]');
-  console.log('  ✓ écran des règles');
+  console.log('  ✓ tutoriel des règles en pages');
 
   // --- Partie A : 5 joueurs, les espions sabotent 3 missions --------
   await click('[data-action="toSetup"]');

@@ -507,6 +507,7 @@
       case 'gameover': app.innerHTML = viewGameOver(); break;
       case 'rules': app.innerHTML = viewRules(); break;
     }
+    bindTutorial();
     updateTimerChip();
   }
 
@@ -1009,6 +1010,90 @@
       '</div>';
   }
 
+  // Tutoriel en pages à balayer : chaque page illustre une étape du jeu
+  // avec les vrais composants de l'interface.
+  function tutPages() {
+    return [
+      {
+        h: t('tut.p1h'), t: t('tut.p1t'),
+        illu: '<div class="camp-mini res">' + ICONS.fist + '</div>' +
+          '<span class="tut-vs">VS</span>' +
+          '<div class="camp-mini spy">' + ICONS.spy + '</div>'
+      },
+      {
+        h: t('tut.p2h'), t: t('tut.p2t'),
+        illu: '<div class="tut-card-back"><span>' + t('reveal.secret') + '</span></div>' +
+          '<span class="tut-vs">↻</span>' +
+          '<div class="tut-card-front">' + ICONS.spy + '</div>'
+      },
+      {
+        h: t('tut.p3h'), t: t('tut.p3t'),
+        illu: '<div class="tut-chips">' +
+          '<div class="pchip"><span class="star">★</span>&nbsp;Ana</div>' +
+          '<div class="pchip sel">Bilal<span class="check">✓</span></div>' +
+          '<div class="pchip sel">Chloé<span class="check">✓</span></div>' +
+          '</div>'
+      },
+      {
+        h: t('tut.p4h'), t: t('tut.p4t'),
+        illu: '<div class="tut-chips">' +
+          '<div class="vote-row"><span class="vote-name">Ana</span><span class="vote-btns">' +
+          '<span class="vbtn up on">👍</span><span class="vbtn down">👎</span></span></div>' +
+          '<div class="vote-row"><span class="vote-name">Bilal</span><span class="vote-btns">' +
+          '<span class="vbtn up">👍</span><span class="vbtn down on">👎</span></span></div>' +
+          '</div>'
+      },
+      {
+        h: t('tut.p5h'), t: t('tut.p5t'),
+        illu: '<div class="tut-mcards">' +
+          '<div class="mcard neutral success tut-mcard"><span class="mcard-icon">' + ICONS.fist + '</span>' +
+          t('mission.success') + '</div>' +
+          '<div class="mcard neutral fail tut-mcard"><span class="mcard-icon">' + ICONS.spy + '</span>' +
+          t('mission.fail') + '</div>' +
+          '</div>'
+      },
+      {
+        h: t('tut.p6h'), t: t('tut.p6t'),
+        illu: '<div class="mtrack tut-track">' +
+          '<div class="mnode ok">✓</div><div class="mnode ok">✓</div><div class="mnode ok">✓</div>' +
+          '</div><div class="tut-trophy">🏆</div>'
+      }
+    ];
+  }
+
+  function tutPagerHtml() {
+    var pages = tutPages();
+    var pageHtml = pages.map(function (p) {
+      return '<div class="tut-page">' +
+        '<div class="tut-illu">' + p.illu + '</div>' +
+        '<div class="tut-h">' + p.h + '</div>' +
+        '<p class="tut-t">' + p.t + '</p>' +
+        '</div>';
+    }).join('');
+    var dots = pages.map(function (_, i) {
+      return '<span class="pip tut-dot' + (i === 0 ? ' on' : '') + '"></span>';
+    }).join('');
+    return '' +
+      '<div class="tut-pager" id="tut-pager">' + pageHtml + '</div>' +
+      '<div class="tut-dots">' +
+      '  <button class="btn btn-mini" data-action="tutPrev">‹</button>' +
+      dots +
+      '  <button class="btn btn-mini" data-action="tutNext">›</button>' +
+      '</div>';
+  }
+
+  function bindTutorial() {
+    var pager = document.getElementById('tut-pager');
+    if (!pager) return;
+    pager.addEventListener('scroll', function () {
+      var idx = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
+      var dots = document.querySelectorAll('.tut-dot');
+      for (var i = 0; i < dots.length; i++) {
+        dots[i].classList.toggle('on', i === idx);
+      }
+    }, { passive: true });
+  }
+
   function viewRules() {
     var rows = '';
     for (var n = RULES.MIN_PLAYERS; n <= RULES.MAX_PLAYERS; n++) {
@@ -1022,28 +1107,7 @@
       '    <h2>' + t('rules.title') + '</h2><span></span>' +
       '  </header>' +
 
-      '  <div class="camp-cards">' +
-      '    <div class="camp-card res">' +
-      '      <div class="camp-icon">' + ICONS.fist + '</div>' +
-      '      <div class="camp-name">' + t('rules.agents') + '</div>' +
-      '      <p>' + t('rules.agentsGoal') + '</p>' +
-      '      <small>' + t('rules.agentsHint') + '</small>' +
-      '    </div>' +
-      '    <div class="camp-card spy">' +
-      '      <div class="camp-icon">' + ICONS.spy + '</div>' +
-      '      <div class="camp-name">' + t('rules.spies') + '</div>' +
-      '      <p>' + t('rules.spiesGoal') + '</p>' +
-      '      <small>' + t('rules.spiesHint') + '</small>' +
-      '    </div>' +
-      '  </div>' +
-      '  <p class="rules-win">🏆 ' + t('rules.win') + '</p>' +
-
-      '  <section class="card-panel">' +
-      '    <label class="field-label">' + t('rules.how') + '</label>' +
-      '    <div class="step-card"><span class="step-num">1</span><p>' + t('rules.s1') + '</p></div>' +
-      '    <div class="step-card"><span class="step-num">2</span><p>' + t('rules.s2') + '</p></div>' +
-      '    <div class="step-card"><span class="step-num">3</span><p>' + t('rules.s3') + '</p></div>' +
-      '  </section>' +
+      tutPagerHtml() +
 
       '  <section class="card-panel">' +
       '    <label class="field-label">' + t('rules.traps') + '</label>' +
@@ -1089,6 +1153,16 @@
     goHome: function () { state.screen = 'home'; state.quitAsk = false; },
     rules: function () { state.rulesReturn = state.screen; state.screen = 'rules'; },
     rulesBack: function () { state.screen = state.rulesReturn || 'home'; },
+    tutPrev: function () {
+      var p = document.getElementById('tut-pager');
+      if (p) p.scrollBy({ left: -p.clientWidth, behavior: 'smooth' });
+      return 'noRender';
+    },
+    tutNext: function () {
+      var p = document.getElementById('tut-pager');
+      if (p) p.scrollBy({ left: p.clientWidth, behavior: 'smooth' });
+      return 'noRender';
+    },
     toSetup: function () {
       var saved = loadSave();
       if (saved && saved.setup) {

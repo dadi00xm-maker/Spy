@@ -551,6 +551,78 @@ body {
 
 /* --- Règles ------------------------------------------------------- */
 
+/* --- Tutoriel en pages -------------------------------------------- */
+
+.tut-pager {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.tut-pager::-webkit-scrollbar { display: none; }
+.tut-page {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.tut-illu {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  pointer-events: none;
+}
+.tut-h { font-weight: 800; font-size: 1.1rem; }
+.tut-t { margin: 0; color: var(--muted); line-height: 1.5; }
+.tut-dots { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.tut-vs { font-weight: 800; color: var(--muted); font-size: 1.1rem; }
+.camp-mini {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.camp-mini svg { width: 46px; height: 46px; }
+.camp-mini.res { background: var(--blue-bg); color: var(--blue); border: 2px solid var(--blue); }
+.camp-mini.spy { background: var(--red-bg); color: var(--red); border: 2px solid var(--red); }
+.tut-card-back, .tut-card-front {
+  width: 100px; height: 136px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--back-face-1), var(--back-face-2));
+}
+.tut-card-back span {
+  border: 2px solid var(--red);
+  color: var(--red);
+  font-weight: 800;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  padding: 4px 7px;
+  border-radius: 6px;
+  transform: rotate(-12deg);
+}
+.tut-card-front { background: linear-gradient(160deg, var(--card-face-1), var(--card-face-2)); border-color: var(--card-line); color: var(--icon-soft); }
+.tut-card-front svg { width: 52px; height: 52px; }
+.tut-chips { display: flex; flex-direction: column; gap: 6px; width: 80%; }
+.tut-mcards { display: flex; gap: 12px; }
+.tut-mcard { width: 96px; aspect-ratio: 3 / 4; font-size: 0.6rem; border-radius: 12px; padding: 6px; letter-spacing: 0.06em; }
+.tut-mcard .mcard-icon svg { width: 34px; height: 34px; }
+.tut-track { width: auto; justify-content: center; gap: 8px; }
+.tut-track .mnode { width: 42px; height: 42px; font-size: 1rem; }
+.tut-trophy { font-size: 2.2rem; }
+
 .camp-cards { display: flex; gap: 10px; }
 .camp-card {
   flex: 1;
