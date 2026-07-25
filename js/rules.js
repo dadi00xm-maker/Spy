@@ -1,11 +1,14 @@
 /*
  * Règles du jeu — constantes et logique pure (testable avec Node).
- * 5 à 10 joueurs, deux camps : la Résistance et les Espions.
+ * 5 à 15 joueurs, deux camps : les Agents et les Espions.
  */
 var RULES = (function () {
   'use strict';
 
-  var SPY_COUNT = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4 };
+  /* 5-10 joueurs : répartition classique du genre. 11-15 joueurs :
+     extension Spy, calibrée pour garder ~1/3 d'espions et des équipes
+     où un espion n'est jamais garanti. */
+  var SPY_COUNT = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4, 11: 4, 12: 4, 13: 5, 14: 5, 15: 6 };
 
   var TEAM_SIZES = {
     5: [2, 3, 2, 3, 3],
@@ -13,7 +16,12 @@ var RULES = (function () {
     7: [2, 3, 3, 4, 4],
     8: [3, 4, 4, 5, 5],
     9: [3, 4, 4, 5, 5],
-    10: [3, 4, 4, 5, 5]
+    10: [3, 4, 4, 5, 5],
+    11: [4, 5, 5, 6, 6],
+    12: [4, 5, 6, 6, 7],
+    13: [5, 6, 6, 7, 7],
+    14: [5, 6, 6, 7, 8],
+    15: [5, 6, 7, 8, 8]
   };
 
   function spyCount(nPlayers) {
@@ -98,7 +106,7 @@ var RULES = (function () {
   }
 
   var MIN_PLAYERS = 5;
-  var MAX_PLAYERS = 10;
+  var MAX_PLAYERS = 15;
   var MISSIONS_TO_WIN = 3;
   var MAX_REJECTIONS = 5;
 

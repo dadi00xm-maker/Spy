@@ -152,6 +152,12 @@ async function main() {
 
   // --- Partie A : 5 joueurs, les espions sabotent 3 missions --------
   await click('[data-action="toSetup"]');
+  // Le compteur monte jusqu'à 15 joueurs (extension) puis revient à 5.
+  for (let i = 0; i < 10; i++) await click('[data-action="countPlus"]');
+  assert.strictEqual((await page.locator('.counter-value').innerText()).trim(), '15', 'compteur à 15');
+  assert.ok((await page.locator('.setup .hint').first().innerText()).includes('6'), '6 espions à 15 joueurs');
+  for (let i = 0; i < 10; i++) await click('[data-action="countMinus"]');
+  assert.strictEqual((await page.locator('.counter-value').innerText()).trim(), '5', 'retour à 5');
   const names = ['Ana', 'Bilal', 'Chloé', 'Dario', 'Emna'];
   for (let i = 0; i < names.length; i++) {
     await page.fill(`[data-name-idx="${i}"]`, names[i]);

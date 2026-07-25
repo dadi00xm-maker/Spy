@@ -5,7 +5,7 @@
 var I18N = {
   fr: {
     'app.title': 'Spy',
-    'app.tagline': 'Le traître est parmi vous — 5 à 10 joueurs',
+    'app.tagline': 'Le traître est parmi vous — 5 à 15 joueurs',
     'app.unofficial': 'Un jeu original — fait en Tunisie 🇹🇳',
 
     'home.newGame': 'Nouvelle partie',
@@ -156,7 +156,7 @@ var I18N = {
 
   en: {
     'app.title': 'Spy',
-    'app.tagline': 'The traitor is among you — 5 to 10 players',
+    'app.tagline': 'The traitor is among you — 5 to 15 players',
     'app.unofficial': 'An original game — made in Tunisia 🇹🇳',
 
     'home.newGame': 'New game',

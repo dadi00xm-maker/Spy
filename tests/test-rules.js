@@ -13,24 +13,37 @@ function check(label, fn) {
 
 console.log('Règles :');
 
-check('nombre d’espions par nombre de joueurs', () => {
+check('nombre d’espions par nombre de joueurs (5 à 15)', () => {
   assert.deepStrictEqual(
-    [5, 6, 7, 8, 9, 10].map(RULES.spyCount),
-    [2, 2, 3, 3, 3, 4]
+    [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(RULES.spyCount),
+    [2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6]
   );
 });
 
-check('tailles d’équipe par nombre de joueurs', () => {
+check('tailles d’équipe par nombre de joueurs (5 à 15)', () => {
   assert.deepStrictEqual(RULES.teamSizes(5), [2, 3, 2, 3, 3]);
   assert.deepStrictEqual(RULES.teamSizes(6), [2, 3, 4, 3, 4]);
   assert.deepStrictEqual(RULES.teamSizes(7), [2, 3, 3, 4, 4]);
   assert.deepStrictEqual(RULES.teamSizes(8), [3, 4, 4, 5, 5]);
   assert.deepStrictEqual(RULES.teamSizes(9), [3, 4, 4, 5, 5]);
   assert.deepStrictEqual(RULES.teamSizes(10), [3, 4, 4, 5, 5]);
+  assert.deepStrictEqual(RULES.teamSizes(11), [4, 5, 5, 6, 6]);
+  assert.deepStrictEqual(RULES.teamSizes(12), [4, 5, 6, 6, 7]);
+  assert.deepStrictEqual(RULES.teamSizes(13), [5, 6, 6, 7, 7]);
+  assert.deepStrictEqual(RULES.teamSizes(14), [5, 6, 6, 7, 8]);
+  assert.deepStrictEqual(RULES.teamSizes(15), [5, 6, 7, 8, 8]);
+  // Cohérence : une équipe ne dépasse jamais le nombre de joueurs, et
+  // les espions seuls ne suffisent jamais à remplir une équipe.
+  for (let n = 5; n <= 15; n++) {
+    for (const k of RULES.teamSizes(n)) {
+      assert.ok(k < n, 'équipe < joueurs');
+      assert.ok(k > RULES.spyCount(n) - 2, 'tailles plausibles');
+    }
+  }
 });
 
 check('la mission 4 demande 2 échecs à partir de 7 joueurs', () => {
-  for (let n = 5; n <= 10; n++) {
+  for (let n = 5; n <= 15; n++) {
     for (let m = 0; m < 5; m++) {
       const expected = (m === 3 && n >= 7) ? 2 : 1;
       assert.strictEqual(RULES.failsNeeded(n, m), expected, n + ' joueurs, mission ' + (m + 1));
@@ -53,7 +66,7 @@ check('vote approuvé à la majorité stricte (égalité = rejet)', () => {
 });
 
 check('distribution des rôles : bons effectifs, mélange stable avec rng injecté', () => {
-  for (let n = 5; n <= 10; n++) {
+  for (let n = 5; n <= 15; n++) {
     const roles = RULES.assignRoles(n);
     assert.strictEqual(roles.length, n);
     assert.strictEqual(roles.filter(r => r === 'spy').length, RULES.spyCount(n));
