@@ -551,8 +551,53 @@ body {
 
 /* --- Règles ------------------------------------------------------- */
 
-.rules .card-panel h3 { margin: 10px 0 0; font-size: 1rem; color: var(--gold); }
-.rules .card-panel p { margin: 4px 0; line-height: 1.5; color: var(--text); }
+.camp-cards { display: flex; gap: 10px; }
+.camp-card {
+  flex: 1;
+  border-radius: var(--radius);
+  padding: 16px 12px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.camp-card.res { background: linear-gradient(170deg, var(--blue-bg), transparent 90%); border: 1.5px solid var(--blue); }
+.camp-card.spy { background: linear-gradient(170deg, var(--red-bg), transparent 90%); border: 1.5px solid var(--red); }
+.camp-icon svg { width: 54px; height: 54px; display: block; }
+.camp-card.res .camp-icon { color: var(--blue); }
+.camp-card.spy .camp-icon { color: var(--red); }
+.camp-name { font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; font-size: 0.95rem; }
+.camp-card.res .camp-name { color: var(--blue); }
+.camp-card.spy .camp-name { color: var(--red); }
+.camp-card p { margin: 0; font-weight: 700; }
+.camp-card small { color: var(--muted); line-height: 1.35; }
+
+.rules-win { text-align: center; font-weight: 700; margin: 0; }
+
+.step-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--bg2);
+  border-radius: 12px;
+  padding: 12px;
+}
+.step-num {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.step-card p { margin: 4px 0 0; line-height: 1.45; }
+
+.trap { background: var(--bg2); border-radius: 12px; padding: 11px 13px; line-height: 1.45; }
 .rtable { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .rtable th, .rtable td { border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: center; }
 .rtable th { color: var(--muted); font-weight: 600; }

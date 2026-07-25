@@ -150,6 +150,15 @@ async function main() {
   assert.ok(await page.evaluate(() => !document.body.classList.contains('theme-light')), 'retour au thème sombre');
   console.log('  ✓ bascule thème clair/sombre');
 
+  // Écran des règles modernisé : deux camps, trois étapes, pièges.
+  await click('[data-action="rules"]');
+  assert.strictEqual(await page.locator('.camp-card').count(), 2, 'cartes des deux camps');
+  assert.strictEqual(await page.locator('.step-num').count(), 3, '3 étapes');
+  assert.ok(await page.locator('.trap').count() >= 4, 'pièges listés');
+  await shot('16-regles');
+  await click('[data-action="rulesBack"]');
+  console.log('  ✓ écran des règles');
+
   // --- Partie A : 5 joueurs, les espions sabotent 3 missions --------
   await click('[data-action="toSetup"]');
   // Le compteur monte jusqu'à 15 joueurs (extension) puis revient à 5.

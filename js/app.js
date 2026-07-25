@@ -1018,17 +1018,53 @@
       '    <button class="btn btn-link" data-action="rulesBack">' + t('common.back') + '</button>' +
       '    <h2>' + t('rules.title') + '</h2><span></span>' +
       '  </header>' +
+
+      '  <div class="camp-cards">' +
+      '    <div class="camp-card res">' +
+      '      <div class="camp-icon">' + ICONS.fist + '</div>' +
+      '      <div class="camp-name">' + t('rules.agents') + '</div>' +
+      '      <p>' + t('rules.agentsGoal') + '</p>' +
+      '      <small>' + t('rules.agentsHint') + '</small>' +
+      '    </div>' +
+      '    <div class="camp-card spy">' +
+      '      <div class="camp-icon">' + ICONS.spy + '</div>' +
+      '      <div class="camp-name">' + t('rules.spies') + '</div>' +
+      '      <p>' + t('rules.spiesGoal') + '</p>' +
+      '      <small>' + t('rules.spiesHint') + '</small>' +
+      '    </div>' +
+      '  </div>' +
+      '  <p class="rules-win">🏆 ' + t('rules.win') + '</p>' +
+
       '  <section class="card-panel">' +
-      '    <h3>' + t('rules.goal.h') + '</h3><p>' + t('rules.goal.p') + '</p>' +
-      '    <h3>' + t('rules.turn.h') + '</h3>' +
-      '    <p>' + t('rules.turn.p1') + '</p><p>' + t('rules.turn.p2') + '</p><p>' + t('rules.turn.p3') + '</p>' +
-      '    <h3>' + t('rules.spies.h') + '</h3><p>' + t('rules.spies.p') + '</p>' +
-      '    <h3>' + t('rules.table.h') + '</h3>' +
+      '    <label class="field-label">' + t('rules.how') + '</label>' +
+      '    <div class="step-card"><span class="step-num">1</span><p>' + t('rules.s1') + '</p></div>' +
+      '    <div class="step-card"><span class="step-num">2</span><p>' + t('rules.s2') + '</p></div>' +
+      '    <div class="step-card"><span class="step-num">3</span><p>' + t('rules.s3') + '</p></div>' +
+      '  </section>' +
+
+      '  <section class="card-panel">' +
+      '    <label class="field-label">' + t('rules.traps') + '</label>' +
+      '    <div class="trap">⚠️ ' + t('rules.trap1') + '</div>' +
+      '    <div class="trap">✌️ ' + t('rules.trap2') + '</div>' +
+      '    <div class="trap">🔥 ' + t('rules.trap3') + '</div>' +
+      '    <div class="trap">🛡️ ' + t('rules.trap4') + '</div>' +
+      '  </section>' +
+
+      '  <section class="card-panel">' +
+      '    <label class="field-label">' + t('rules.options.h') + '</label>' +
+      '    <div class="trap">★ ' + t('rules.opt.cmd') + '</div>' +
+      '    <div class="trap">🙈 ' + t('rules.opt.blind') + '</div>' +
+      '    <div class="trap">🔊 ' + t('rules.opt.voice') + '</div>' +
+      '  </section>' +
+
+      '  <section class="card-panel">' +
+      '    <label class="field-label">' + t('rules.table.h') + '</label>' +
       '    <table class="rtable"><thead><tr><th>' + t('rules.table.players') + '</th><th>' +
       t('rules.table.spies') + '</th><th>' + t('rules.table.teams') + '</th></tr></thead>' +
       '    <tbody>' + rows + '</tbody></table>' +
-      '    <h3>' + t('rules.tips.h') + '</h3><p>' + t('rules.tips.p') + '</p>' +
       '  </section>' +
+
+      '  <p class="hint center">💡 ' + t('rules.tip') + '</p>' +
       '</div>';
   }
 
