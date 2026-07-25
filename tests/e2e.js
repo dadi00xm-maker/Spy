@@ -337,6 +337,48 @@ async function main() {
   assert.ok(st.game.assassination && !st.game.assassination.wasCommander);
   console.log('  ✓ partie E : l’Assassin se trompe, les Agents l’emportent');
 
+  // --- Partie F : finale décisive à 2-2 (2 sabotages requis) --------
+  await click('[data-action="toSetup"]');
+  await click('[data-action="toggleCommander"]'); // repasse le mode Commandant sur OFF
+  await click('[data-action="startGame"]');
+  await revealAll(false);
+  st = await state();
+  assert.strictEqual(st.game.commanderMode, false);
+  const spyF = st.game.players.map((p, i) => p.role === 'spy' ? i : -1).filter(i => i !== -1);
+  const resF = st.game.players.map((p, i) => p.role === 'res' ? i : -1).filter(i => i !== -1);
+  // Deux sabotages, puis deux succès → égalité 2-2.
+  const teamsF = [
+    [spyF[0], resF[0]],            // mission 1 (k=2) → sabotée
+    [spyF[0], resF[0], resF[1]],   // mission 2 (k=3) → sabotée
+    [resF[0], resF[1]],            // mission 3 (k=2) → réussie
+    [resF[0], resF[1], resF[2]]    // mission 4 (k=3) → réussie
+  ];
+  for (const team of teamsF) {
+    await pickTeam(team);
+    await voteAll('up', true);
+    await runMission(true);
+    await click('[data-action="missionDone"]');
+  }
+  st = await state();
+  assert.strictEqual(st.game.round, 4, 'manche 5 atteinte');
+  assert.strictEqual(st.game.phase, 'team');
+  // Bandeau décisif + badge « 2 ✗ » sur la 5e mission.
+  const warnText = await page.locator('.phase .warn').innerText();
+  assert.ok(warnText.length > 10, 'bandeau de finale décisive affiché');
+  assert.strictEqual(await page.locator('.mbadge').count(), 1, 'badge décisif sur la mission 5');
+  await shot('15-finale-decisive');
+  // Finale : l'espion sabote SEUL → 1 sabotage < 2 requis → mission réussie.
+  await pickTeam([spyF[0], resF[0], resF[1]]);
+  await voteAll('up', true);
+  await runMission(true);
+  await click('[data-action="missionDone"]');
+  st = await state();
+  assert.strictEqual(st.game.missions[4].result, 'success',
+    'finale réussie malgré 1 sabotage (2 requis)');
+  assert.strictEqual(st.screen, 'gameover');
+  assert.strictEqual(st.game.winner, 'res');
+  console.log('  ✓ partie F : finale décisive à 2-2 — 1 sabotage ne suffit plus');
+
   // --- Reprise de partie (sauvegarde locale) ------------------------
   await click('[data-action="toSetup"]');
   await click('[data-action="startGame"]');

@@ -452,8 +452,14 @@
 
   function missionOutcome() {
     var fails = g().missionChoices.filter(function (ok) { return !ok; }).length;
-    var result = RULES.missionResult(nPlayers(), g().round, fails);
-    return { fails: fails, result: result, needed: RULES.failsNeeded(nPlayers(), g().round) };
+    var decisive = RULES.isDecisive(g().missions, g().round);
+    var result = RULES.missionResult(nPlayers(), g().round, fails, decisive);
+    return {
+      fails: fails,
+      result: result,
+      needed: RULES.failsNeeded(nPlayers(), g().round, decisive),
+      decisive: decisive
+    };
   }
 
   function finishMission() {
@@ -479,6 +485,10 @@
       g().team = [];
       g().phase = 'team';
       timerResetTo(g().timerMin);
+      // Annonce de la finale décisive (égalité 2-2 avant la 5e mission).
+      if (g().round === 4 && RULES.isDecisive(g().missions, 4)) {
+        speak(t('decisive.hint'));
+      }
     }
     save();
   }
@@ -690,8 +700,12 @@
       if (m && m.result === 'success') { cls += ' ok'; label = '✓'; }
       else if (m && m.result === 'fail') { cls += ' ko'; label = '✗'; }
       else if (i === game.round) { cls += ' now'; }
-      var badge = (i === 3 && nPlayers() >= 7)
-        ? '<span class="mbadge">' + t('board.twoFails') + '</span>' : '';
+      var badge = '';
+      if (i === 3 && nPlayers() >= 7) {
+        badge = '<span class="mbadge">' + t('board.twoFails') + '</span>';
+      } else if (i === 4 && RULES.isDecisive(game.missions, 4)) {
+        badge = '<span class="mbadge">🔥 ' + t('board.twoFails') + '</span>';
+      }
       html += '<div class="mslot"><div class="' + cls + '">' + label + '</div>' + badge + '</div>';
     }
     html += '</div>';
@@ -791,10 +805,13 @@
         '  <button class="btn btn-mini" data-action="timerReset">' + t('timer.reset') + '</button>' +
         '</div>'
       : '';
+    var decisiveBanner = (game.round === 4 && RULES.isDecisive(game.missions, 4))
+      ? '<p class="warn">🔥 ' + t('decisive.hint') + '</p>' : '';
     return '' +
       '<section class="phase">' +
       '  <h3>' + t('team.title', { i: game.round + 1, k: k }) + '</h3>' +
       '  <p class="hint">' + t('team.hint', { leader: '<b>' + esc(leaderName) + '</b>', k: k }) + '</p>' +
+      decisiveBanner +
       timerChip +
       '  <div class="pgrid">' + chips + '</div>' +
       '  <p class="hint center">' + t('team.selected', { x: game.team.length, k: k }) + '</p>' +

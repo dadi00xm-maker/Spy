@@ -102,6 +102,19 @@ check('shuffle conserve les éléments', () => {
   assert.deepStrictEqual(arr, [1, 2, 3, 4, 5, 6]); // pas de mutation
 });
 
+check('finale décisive (égalité 2-2) : 2 sabotages requis', () => {
+  const S = { result: 'success' }, F = { result: 'fail' };
+  assert.strictEqual(RULES.isDecisive([S, F, S, F, null], 4), true);
+  assert.strictEqual(RULES.isDecisive([S, S, F, S, null], 4), false);
+  assert.strictEqual(RULES.isDecisive([S, F, S, F, null], 3), false);
+  assert.strictEqual(RULES.failsNeeded(5, 4, true), 2);
+  assert.strictEqual(RULES.failsNeeded(5, 4, false), 1);
+  assert.strictEqual(RULES.failsNeeded(15, 4, true), 2);
+  assert.strictEqual(RULES.missionResult(5, 4, 1, true), 'success'); // 1 sabotage : insuffisant
+  assert.strictEqual(RULES.missionResult(5, 4, 2, true), 'fail');
+  assert.strictEqual(RULES.missionResult(5, 4, 1, false), 'fail');
+});
+
 check('décompte et détection du vainqueur', () => {
   const S = { result: 'success' }, F = { result: 'fail' };
   assert.deepStrictEqual(RULES.tally([S, F, null, null, null]), { success: 1, fail: 1 });

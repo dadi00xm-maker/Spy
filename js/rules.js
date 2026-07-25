@@ -33,8 +33,17 @@ var RULES = (function () {
   }
 
   // La 4e mission (index 3) demande 2 sabotages à partir de 7 joueurs.
-  function failsNeeded(nPlayers, missionIndex) {
+  // La finale « décisive » (jouée à égalité 2-2) en demande toujours 2.
+  function failsNeeded(nPlayers, missionIndex, decisive) {
+    if (decisive) return 2;
     return (missionIndex === 3 && nPlayers >= 7) ? 2 : 1;
+  }
+
+  // Vrai si la 5e mission se joue alors que le score est à 2 partout.
+  function isDecisive(missions, missionIndex) {
+    if (missionIndex !== 4) return false;
+    var t = tally(missions);
+    return t.success === 2 && t.fail === 2;
   }
 
   // Mélange de Fisher-Yates ; rng injectable pour les tests.
@@ -76,9 +85,9 @@ var RULES = (function () {
     };
   }
 
-  // Résout une mission à partir du nombre de cartes Échec jouées.
-  function missionResult(nPlayers, missionIndex, failCards) {
-    var needed = failsNeeded(nPlayers, missionIndex);
+  // Résout une mission à partir du nombre de cartes Sabotage jouées.
+  function missionResult(nPlayers, missionIndex, failCards, decisive) {
+    var needed = failsNeeded(nPlayers, missionIndex, decisive);
     return failCards >= needed ? 'fail' : 'success';
   }
 
@@ -118,6 +127,7 @@ var RULES = (function () {
     spyCount: spyCount,
     teamSizes: teamSizes,
     failsNeeded: failsNeeded,
+    isDecisive: isDecisive,
     shuffle: shuffle,
     assignRoles: assignRoles,
     specialRoles: specialRoles,

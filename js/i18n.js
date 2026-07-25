@@ -110,6 +110,8 @@ var I18N = {
     'cer.cmdClose': 'Commandant, referme les yeux. Espions, baissez le pouce.',
     'cer.openAll': 'Ouvrez tous les yeux… La partie commence !',
 
+    'decisive.hint': 'Mission décisive ! Égalité deux partout : il faudra au moins deux cartes Sabotage pour faire échouer cette dernière mission.',
+
     'assassin.title': 'Dernière chance des espions',
     'assassin.hint': 'Les Agents ont réussi 3 missions… mais si l’Assassin identifie le Commandant, les espions volent la victoire. Espions, concertez-vous : qui est le Commandant ?',
     'assassin.choose': 'Désignez le Commandant présumé',
@@ -260,6 +262,8 @@ var I18N = {
     'cer.cmdOpen': 'Commander… open your eyes and spot the raised thumbs.',
     'cer.cmdClose': 'Commander, close your eyes. Spies, thumbs down.',
     'cer.openAll': 'Everyone, open your eyes… The game begins!',
+
+    'decisive.hint': 'Decisive mission! Two-all tie: it will take at least two Sabotage cards to fail this final mission.',
 
     'assassin.title': 'The spies’ last chance',
     'assassin.hint': 'The Agents completed 3 missions… but if the Assassin identifies the Commander, the spies steal the win. Spies, talk it over: who is the Commander?',
