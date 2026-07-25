@@ -92,19 +92,18 @@ async function main() {
     await click('[data-action="afterVote"]');
   }
 
-  // Joue la mission : les espions de l'équipe sabotent si `spiesFail`.
-  async function runMission(spiesFail) {
+  // Joue la mission : les espions sabotent si `spiesFail` ; si
+  // `resTapFail`, les résistants TOUCHENT aussi Échec (qui doit être
+  // compté comme Succès par la règle officielle).
+  async function runMission(spiesFail, resTapFail) {
     let st = await state();
     const teamLen = st.game.team.length;
     for (let k = 0; k < teamLen; k++) {
       st = await state();
       const member = st.game.players[st.game.team[st.game.missionIdx]];
       await click('[data-action="missionImHere"]');
-      if (member.role === 'spy' && spiesFail) {
-        await click('[data-action="pickFail"]');
-      } else {
-        await click('[data-action="pickSuccess"]');
-      }
+      const tapFail = member.role === 'spy' ? spiesFail : !!resTapFail;
+      await click(tapFail ? '[data-action="pickFail"]' : '[data-action="pickSuccess"]');
       await click('[data-action="pickConfirm"]');
     }
     // Révélation des cartes.
@@ -162,22 +161,25 @@ async function main() {
     if (round === 0) await shot('05-vote');
     await voteAll('up', true);
     if (round === 0) {
+      // Membre 1 : l'espion sabote (avec test du bouton « changer »).
       await click('[data-action="missionImHere"]');
       await shot('06-mission-choix');
-      // La carte Échec doit être inerte pour un résistant.
-      const member = st.game.players[team[0]];
-      if (member.role === 'res') {
-        await click('[data-action="pickFail"]');
-        const s2 = await state();
-        assert.strictEqual(s2.game.missionPick, null, 'un résistant ne peut pas saboter');
-      }
+      // Écran identique pour tous : aucune carte ne doit être désactivée.
+      assert.strictEqual(await page.locator('.mcard[disabled]').count(), 0, 'aucune carte désactivée');
       await click('[data-action="pickSuccess"]');
-      await click('[data-action="pickChange"]');   // test du bouton « changer »
-      if (member.role === 'spy') await click('[data-action="pickFail"]');
-      else await click('[data-action="pickSuccess"]');
+      await click('[data-action="pickChange"]');
+      await click('[data-action="pickFail"]');
       await click('[data-action="pickConfirm"]');
-      // Les membres restants.
+      // Membre 2 : le résistant TOUCHE Échec — la règle doit le compter Succès.
+      await click('[data-action="missionImHere"]');
+      await click('[data-action="pickFail"]');
+      let s2 = await state();
+      assert.strictEqual(s2.game.missionPick, false, 'le résistant peut sélectionner Échec');
+      await click('[data-action="pickConfirm"]');
       let s3 = await state();
+      assert.deepStrictEqual(s3.game.missionChoices, [false, true],
+        'le geste Échec d’un résistant est compté comme Succès');
+      // Les membres restants (aucun pour une équipe de 2).
       while (s3.game.phase === 'mission') {
         const m = s3.game.players[s3.game.team[s3.game.missionIdx]];
         await click('[data-action="missionImHere"]');
@@ -236,10 +238,13 @@ async function main() {
   for (let round = 0; round < 3; round++) {
     await pickTeam(resOnly.slice(0, [2, 3, 2][round]));
     await voteAll('up', true);
-    await runMission(true); // aucun espion dans l'équipe → succès garanti
+    // Équipe 100 % résistante qui TOUCHE Échec : la règle officielle doit
+    // compter chaque carte comme un Succès.
+    await runMission(true, true);
     await click('[data-action="missionDone"]');
     st = await state();
-    assert.strictEqual(st.game.missions[round].result, 'success');
+    assert.strictEqual(st.game.missions[round].result, 'success',
+      'mission réussie malgré des gestes Échec résistants');
   }
   st = await state();
   assert.strictEqual(st.screen, 'gameover');

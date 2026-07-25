@@ -94,6 +94,7 @@
       missionIdx: 0,
       missionStage: 'pass', // pass | pick
       missionPick: null,
+      missionSwap: false, // ordre aléatoire des deux cartes (anti-observation)
       missionChoices: [],
       revealCards: [],
       assassinPick: null,
@@ -704,28 +705,34 @@
         '</section>';
     }
 
-    // Stage « pick »
-    var isRes = p.role === 'res';
+    // Stage « pick ». L'écran est STRICTEMENT identique quel que soit le
+    // rôle : mêmes cartes neutres pour tous, ordre mélangé par joueur, et
+    // aucun état désactivé — un Échec joué par un résistant sera simplement
+    // compté comme un Succès (règle officielle). Impossible de deviner le
+    // camp de quelqu'un en le regardant jouer.
     var pick = game.missionPick; // null | true (succès) | false (échec)
     var confirmBar = pick === null ? '' :
       '<div class="confirm-bar">' +
       '  <button class="btn btn-ghost" data-action="pickChange">' + t('mission.change') + '</button>' +
       '  <button class="btn btn-primary" data-action="pickConfirm">' + t('mission.confirm') + '</button>' +
       '</div>';
+    var successCard =
+      '<button class="mcard neutral' + (pick === true ? ' picked' : '') + (pick === false ? ' dim' : '') + '"' +
+      '  data-action="pickSuccess">' +
+      '  <span class="mcard-icon">' + ICONS.fist + '</span>' + t('mission.success') + '</button>';
+    var failCard =
+      '<button class="mcard neutral' + (pick === false ? ' picked' : '') + (pick === true ? ' dim' : '') + '"' +
+      '  data-action="pickFail">' +
+      '  <span class="mcard-icon">' + ICONS.spy + '</span>' + t('mission.fail') + '</button>';
     return '' +
       '<section class="phase center-phase">' +
       '  <p class="progress">' + pos + ' — ' + esc(p.name) + '</p>' +
       '  <h3>' + t('mission.pick') + '</h3>' +
       '  <p class="hint center">' + t('mission.pickHint') + '</p>' +
       '  <div class="mission-cards">' +
-      '    <button class="mcard success' + (pick === true ? ' picked' : '') + (pick === false ? ' dim' : '') + '"' +
-      '      data-action="pickSuccess">' +
-      '      <span class="mcard-icon">' + ICONS.fist + '</span>' + t('mission.success') + '</button>' +
-      '    <button class="mcard fail' + (pick === false ? ' picked' : '') + (pick === true ? ' dim' : '') + '"' +
-      '      data-action="pickFail"' + (isRes ? ' disabled' : '') + '>' +
-      '      <span class="mcard-icon">' + ICONS.spy + '</span>' + t('mission.fail') + '</button>' +
+      (game.missionSwap ? failCard + successCard : successCard + failCard) +
       '  </div>' +
-      (isRes ? '<p class="hint center">' + t('mission.resOnly') + '</p>' : '') +
+      '  <p class="hint center">' + t('mission.rule') + '</p>' +
       confirmBar +
       '</section>';
   }
@@ -954,19 +961,25 @@
     },
     afterVote: function () { afterVoteResult(); },
 
-    missionImHere: function () { g().missionStage = 'pick'; g().missionPick = null; save(); },
-    pickSuccess: function () { g().missionPick = true; },
-    pickFail: function () {
-      var memberIdx = g().team[g().missionIdx];
-      if (g().players[memberIdx].role === 'res') return; // la Résistance ne peut pas saboter
-      g().missionPick = false;
+    missionImHere: function () {
+      g().missionStage = 'pick';
+      g().missionPick = null;
+      // Ordre des deux cartes tiré au sort pour ce joueur : la position du
+      // doigt ne révèle rien à ceux qui regardent.
+      g().missionSwap = Math.random() < 0.5;
+      save();
     },
+    pickSuccess: function () { g().missionPick = true; },
+    pickFail: function () { g().missionPick = false; },
     pickChange: function () { g().missionPick = null; },
     pickConfirm: function () {
-      if (g().missionPick === null) return;
-      // Enchaîne directement sur l'écran neutre « passe le téléphone »
-      // du joueur suivant (ou sur la révélation des cartes).
-      recordMissionChoice(g().missionPick);
+      var game = g();
+      if (game.missionPick === null) return;
+      var member = game.players[game.team[game.missionIdx]];
+      // Règle officielle appliquée en silence : un résistant joue toujours
+      // Succès, quel que soit son geste — écran identique pour tous.
+      var success = member.role === 'res' ? true : game.missionPick;
+      recordMissionChoice(success);
     },
     flipCard: function (el) {
       var i = parseInt(el.getAttribute('data-idx'), 10);

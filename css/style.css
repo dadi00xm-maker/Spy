@@ -272,22 +272,20 @@ body {
   font-size: 1.3rem;
 }
 
-.role-front.res { background: linear-gradient(160deg, #17335f, #0e2242); border: 1.5px solid var(--blue); }
-.role-front.spy { background: linear-gradient(160deg, #521b26, #2b0d13); border: 1.5px solid var(--red); }
-.role-front.commander { background: linear-gradient(160deg, #2d2258, #171034); border: 1.5px solid var(--purple); }
-.role-title { font-size: 1.7rem; font-weight: 800; letter-spacing: 0.14em; }
-.role-front.res .role-title { color: var(--blue); }
-.role-front.spy .role-title { color: var(--red); }
-.role-front.commander .role-title { color: #a78bfa; }
+/* Faces de rôle volontairement IDENTIQUES pour tous les camps : aucune
+   couleur repérable de loin — seul le texte (lisible de près) diffère. */
+.role-front.res, .role-front.spy, .role-front.commander {
+  background: linear-gradient(160deg, #1d2846, #111a2f);
+  border: 1.5px solid #45568a;
+}
+.role-title { font-size: 1.7rem; font-weight: 800; letter-spacing: 0.14em; color: var(--text); }
 .role-icon { font-size: 3.4rem; }
 .role-icon svg { width: 92px; height: 92px; display: block; }
-.role-front.res .role-icon { color: #9cc2ff; }
-.role-front.spy .role-icon { color: #ff9ba0; }
-.role-front.commander .role-icon { color: #c4b5fd; }
+.role-front .role-icon { color: #cfd8ee; }
 .role-badge {
   display: inline-block;
-  border: 1.5px solid var(--red);
-  color: #ffb3b6;
+  border: 1.5px solid #45568a;
+  color: #cfd8ee;
   border-radius: 999px;
   padding: 3px 12px;
   font-size: 0.72rem;
@@ -410,10 +408,12 @@ body {
 .mcard:active { transform: scale(0.97); }
 .mcard-icon { font-size: 2.6rem; }
 .mcard-icon svg { width: 58px; height: 58px; display: block; }
-.mcard.success .mcard-icon { color: #9cc2ff; }
-.mcard.fail .mcard-icon { color: #ff9ba0; }
-.mcard.success { background: linear-gradient(160deg, #17335f, #0e2242); border: 2px solid var(--blue); }
-.mcard.fail { background: linear-gradient(160deg, #521b26, #2b0d13); border: 2px solid var(--red); }
+/* Cartes de mission neutres : même apparence exacte pour les deux choix. */
+.mcard.neutral {
+  background: linear-gradient(160deg, #1c2440, #131b30);
+  border: 2px solid #3b4a74;
+}
+.mcard.neutral .mcard-icon { color: #cfd8ee; }
 .mcard.picked { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.18); }
 .mcard.dim { opacity: 0.35; }
 .mcard:disabled { opacity: 0.25; cursor: default; }

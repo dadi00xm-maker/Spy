@@ -23,7 +23,13 @@ compte, aucune donnée collectée.
 - **Vote public** pour approuver ou rejeter chaque équipe.
 - **Missions secrètes** : chaque agent choisit Succès ou Échec sur le
   téléphone, puis on retourne les cartes mélangées — impossible de savoir qui
-  a saboté. La Résistance ne peut pas saboter (règle officielle appliquée).
+  a saboté.
+- **Anti-regards indiscrets** : pendant une mission, l'écran est strictement
+  identique pour tous les rôles (cartes neutres, rien de désactivé), l'ordre
+  des deux cartes est tiré au sort pour chaque joueur (la position du doigt ne
+  révèle rien), et une carte Échec jouée par un résistant est comptée comme un
+  Succès (règle officielle). Les cartes de rôle utilisent aussi un fond neutre
+  illisible à distance.
 - **Options** : variante « espions à l'aveugle », minuteur de discussion
   (3 / 5 / 10 min).
 - **Bilingue** : français 🇫🇷 (par défaut) et anglais 🇬🇧.
