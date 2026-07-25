@@ -774,6 +774,10 @@
     card.addEventListener('pointerup', hide);
     card.addEventListener('pointercancel', hide);
     card.addEventListener('pointerleave', hide);
+    // iOS : bloque la sélection de texte et le menu système pendant
+    // l'appui long, qui interrompaient la révélation (pointercancel).
+    card.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+    card.addEventListener('touchend', hide);
   }
 
   /* ------------------------------------------------------------------ */

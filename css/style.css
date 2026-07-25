@@ -19,6 +19,10 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* L'attribut hidden doit toujours gagner, même sur les éléments en flex
+   (sans ceci, la face de la carte de rôle resterait visible en permanence). */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -214,8 +218,14 @@ body {
   position: relative;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none; /* iOS : pas de loupe/menu sur appui long */
   touch-action: none;
   cursor: pointer;
+}
+.role-card * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .role-back, .role-front {

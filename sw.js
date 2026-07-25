@@ -1,5 +1,5 @@
 /* Service worker : mise en cache de l'application pour jouer hors ligne. */
-var CACHE = 'resistance-v1';
+var CACHE = 'resistance-v2';
 var ASSETS = [
   './',
   './index.html',

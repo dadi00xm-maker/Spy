@@ -33,6 +33,13 @@ async function main() {
   const state = () => page.evaluate(() => window.RESISTANCE_DEBUG.getState());
   const click = (sel) => page.click(sel);
 
+  // Visibilité RÉELLE de la face du rôle (display calculé, pas l'attribut :
+  // une régression CSS peut écraser [hidden] avec display:flex).
+  const frontVisible = () => page.evaluate(() => {
+    const el = document.querySelector('.role-front');
+    return !!el && getComputedStyle(el).display !== 'none';
+  });
+
   // Maintient la carte de rôle appuyée, vérifie le contenu, relâche.
   async function holdCard(checkFn) {
     const box = await page.locator('#hold-card').boundingBox();
@@ -49,10 +56,10 @@ async function main() {
     let spyShotDone = false;
     for (let i = 0; i < players.length; i++) {
       await click('[data-action="revealImHere"]');
+      assert.strictEqual(await frontVisible(), false, 'rôle invisible AVANT l’appui');
       const isSpy = players[i].role === 'spy';
       await holdCard(async () => {
-        const frontHidden = await page.locator('.role-front').getAttribute('hidden');
-        assert.strictEqual(frontHidden, null, 'la carte doit être visible pendant l’appui');
+        assert.strictEqual(await frontVisible(), true, 'rôle visible pendant l’appui');
         if (isSpy && shotSpy && !spyShotDone) {
           await shot('03-role-espion');
           spyShotDone = true;
@@ -63,8 +70,7 @@ async function main() {
         }
       });
       // Relâchée → cachée, et le bouton est déverrouillé.
-      const backHidden = await page.locator('.role-back').getAttribute('hidden');
-      assert.strictEqual(backHidden, null, 'la carte doit être cachée après relâchement');
+      assert.strictEqual(await frontVisible(), false, 'rôle invisible après relâchement');
       await click('#reveal-next:not([disabled])');
     }
   }
