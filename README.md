@@ -25,11 +25,14 @@ compte, aucune donnée collectée.
   téléphone, puis on retourne les cartes mélangées — impossible de savoir qui
   a saboté.
 - **Anti-regards indiscrets** : pendant une mission, l'écran est strictement
-  identique pour tous les rôles (cartes neutres, rien de désactivé), l'ordre
-  des deux cartes est tiré au sort pour chaque joueur (la position du doigt ne
-  révèle rien), et une carte Échec jouée par un résistant est comptée comme un
-  Succès (règle officielle). Les cartes de rôle utilisent aussi un fond neutre
-  illisible à distance.
+  identique pour tous les rôles (mêmes fonds de cartes, rien de désactivé —
+  seules les étiquettes sont colorées : Échec en rouge, Succès en bleu),
+  l'ordre des deux cartes est tiré au sort pour chaque joueur (la position du
+  doigt ne révèle rien), et un résistant qui touche Échec sélectionne
+  automatiquement Succès (règle officielle). Les cartes de rôle utilisent
+  aussi un fond neutre illisible à distance.
+- **Thème clair ou sombre** ☀️🌙 : bouton sur l'écran d'accueil, préférence
+  mémorisée.
 - **Annonceur vocal** 🔊 : l'app annonce à voix haute à qui passer le
   téléphone, les résultats des votes et des missions, et le vainqueur
   (synthèse vocale du téléphone, FR/EN, bouton muet en cours de partie).

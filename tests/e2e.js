@@ -140,6 +140,14 @@ async function main() {
   assert.ok((await page.locator('.title').innerText()).includes('RÉSISTANCE'), 'titre français');
   console.log('  ✓ bascule FR/EN');
 
+  // Bascule de thème clair/sombre.
+  await click('[data-action="toggleTheme"]');
+  assert.ok(await page.evaluate(() => document.body.classList.contains('theme-light')), 'thème clair appliqué');
+  await shot('14-mode-clair');
+  await click('[data-action="toggleTheme"]');
+  assert.ok(await page.evaluate(() => !document.body.classList.contains('theme-light')), 'retour au thème sombre');
+  console.log('  ✓ bascule thème clair/sombre');
+
   // --- Partie A : 5 joueurs, les espions sabotent 3 missions --------
   await click('[data-action="toSetup"]');
   const names = ['Ana', 'Bilal', 'Chloé', 'Dario', 'Emna'];
@@ -184,15 +192,17 @@ async function main() {
       await click('[data-action="pickChange"]');
       await click('[data-action="pickFail"]');
       await click('[data-action="pickConfirm"]');
-      // Membre 2 : le résistant TOUCHE Échec — la règle doit le compter Succès.
+      // Membre 2 : le résistant TOUCHE Échec — c'est la carte Succès qui
+      // doit se sélectionner (il ne peut pas saboter).
       await click('[data-action="missionImHere"]');
       await click('[data-action="pickFail"]');
       let s2 = await state();
-      assert.strictEqual(s2.game.missionPick, false, 'le résistant peut sélectionner Échec');
+      assert.strictEqual(s2.game.missionPick, true,
+        'le geste Échec d’un résistant sélectionne Succès');
       await click('[data-action="pickConfirm"]');
       let s3 = await state();
       assert.deepStrictEqual(s3.game.missionChoices, [false, true],
-        'le geste Échec d’un résistant est compté comme Succès');
+        'seul l’espion a réellement saboté');
       // Les membres restants (aucun pour une équipe de 2).
       while (s3.game.phase === 'mission') {
         const m = s3.game.players[s3.game.team[s3.game.missionIdx]];

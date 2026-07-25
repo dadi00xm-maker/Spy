@@ -46,9 +46,12 @@
   /* État                                                                */
   /* ------------------------------------------------------------------ */
 
+  var THEME_KEY = 'resistance.theme';
+
   var state = {
     lang: localStorage.getItem(LANG_KEY) || 'fr',
-    screen: 'home', // home | setup | reveal | board | gameover | rules
+    theme: localStorage.getItem(THEME_KEY) || 'dark',
+    screen: 'home', // home | setup | reveal | ceremony | board | gameover | rules
     rulesReturn: 'home',
     setup: {
       count: 5,
@@ -150,6 +153,12 @@
       });
     }
     return str;
+  }
+
+  function applyTheme() {
+    document.body.classList.toggle('theme-light', state.theme === 'light');
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', state.theme === 'light' ? '#f2f5fb' : '#0b0f1c');
   }
 
   function esc(s) {
@@ -513,6 +522,8 @@
       '    <button class="btn btn-primary" data-action="toSetup">' + t('home.newGame') + '</button>' +
       '    <button class="btn btn-ghost" data-action="rules">' + t('home.rules') + '</button>' +
       '    <button class="btn btn-link" data-action="toggleLang">🌐 ' + t('home.lang') + '</button>' +
+      '    <button class="btn btn-link" data-action="toggleTheme">' +
+      t(state.theme === 'light' ? 'home.themeDark' : 'home.themeLight') + '</button>' +
       '  </div>' +
       '  <p class="unofficial">' + t('app.unofficial') + '</p>' +
       '</div>';
@@ -884,11 +895,11 @@
       '  <button class="btn btn-primary" data-action="pickConfirm">' + t('mission.confirm') + '</button>' +
       '</div>';
     var successCard =
-      '<button class="mcard neutral' + (pick === true ? ' picked' : '') + (pick === false ? ' dim' : '') + '"' +
+      '<button class="mcard neutral success' + (pick === true ? ' picked' : '') + (pick === false ? ' dim' : '') + '"' +
       '  data-action="pickSuccess">' +
       '  <span class="mcard-icon">' + ICONS.fist + '</span>' + t('mission.success') + '</button>';
     var failCard =
-      '<button class="mcard neutral' + (pick === false ? ' picked' : '') + (pick === true ? ' dim' : '') + '"' +
+      '<button class="mcard neutral fail' + (pick === false ? ' picked' : '') + (pick === true ? ' dim' : '') + '"' +
       '  data-action="pickFail">' +
       '  <span class="mcard-icon">' + ICONS.spy + '</span>' + t('mission.fail') + '</button>';
     return '' +
@@ -1018,6 +1029,11 @@
     toggleLang: function () {
       state.lang = state.lang === 'fr' ? 'en' : 'fr';
       localStorage.setItem(LANG_KEY, state.lang);
+    },
+    toggleTheme: function () {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem(THEME_KEY, state.theme);
+      applyTheme();
     },
     goHome: function () { state.screen = 'home'; state.quitAsk = false; },
     rules: function () { state.rulesReturn = state.screen; state.screen = 'rules'; },
@@ -1169,7 +1185,12 @@
       save();
     },
     pickSuccess: function () { g().missionPick = true; },
-    pickFail: function () { g().missionPick = false; },
+    pickFail: function () {
+      var member = g().players[g().team[g().missionIdx]];
+      // Un résistant ne peut pas saboter : son geste sélectionne la carte
+      // Succès (même geste pour tous — la règle est affichée sous les cartes).
+      g().missionPick = member.role === 'res' ? true : false;
+    },
     pickChange: function () { g().missionPick = null; },
     pickConfirm: function () {
       var game = g();
@@ -1266,6 +1287,7 @@
   /* ------------------------------------------------------------------ */
 
   document.documentElement.setAttribute('lang', state.lang);
+  applyTheme();
   render();
 
   if ('serviceWorker' in navigator &&
