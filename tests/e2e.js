@@ -20,10 +20,11 @@ async function main() {
   const launchOpts = { args: ['--no-sandbox'] };
   if (process.env.CHROMIUM) launchOpts.executablePath = process.env.CHROMIUM;
   const browser = await chromium.launch(launchOpts);
-  const page = await browser.newPage({
+  const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2
   });
+  const page = await context.newPage();
 
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -162,6 +163,12 @@ async function main() {
   await click('[data-action="rulesBack"]');
   console.log('  ✓ tutoriel des règles en pages');
 
+  // --- Écran TV : ouvert en parallèle, synchronisé en local ----------
+  const tv = await context.newPage();
+  await tv.setViewportSize({ width: 1280, height: 720 });
+  await tv.goto(BASE_URL + '/tv.html');
+  assert.ok((await tv.locator('#app-tv').innerText()).includes('SPY'), 'écran TV en attente');
+
   // --- Partie A : 5 joueurs, les espions sabotent 3 missions --------
   await click('[data-action="toSetup"]');
   // Le compteur monte jusqu'à 15 joueurs (extension) puis revient à 5.
@@ -189,6 +196,13 @@ async function main() {
   assert.strictEqual(st.game.phase, 'team');
   await shot('04-plateau-equipe');
   console.log('  ✓ distribution des rôles terminée');
+
+  // La TV suit la partie : piste des missions, chef, et AUCUN rôle.
+  await page.waitForTimeout(400);
+  assert.strictEqual(await tv.locator('.mnode').count(), 5, 'piste TV à 5 missions');
+  let tvText = await tv.locator('#app-tv').innerText();
+  assert.ok(!tvText.includes('Résistant'), 'aucun rôle sur la TV en cours de partie');
+  await tv.screenshot({ path: 'docs/screenshots/17-ecran-tv.png' });
 
   const spyIdx = st.game.players.map((p, i) => p.role === 'spy' ? i : -1).filter(i => i !== -1);
   const resIdx = st.game.players.map((p, i) => p.role === 'res' ? i : -1).filter(i => i !== -1);
@@ -250,6 +264,14 @@ async function main() {
   assert.strictEqual(st.game.winReason, 'missions');
   await shot('08-fin-espions');
   console.log('  ✓ partie A : victoire des espions (3 sabotages)');
+
+  // Fin de partie sur la TV : vainqueur et rôles révélés.
+  await page.waitForTimeout(400);
+  tvText = await tv.locator('#app-tv').innerText();
+  assert.ok(tvText.includes('Espions'), 'vainqueur affiché sur la TV');
+  assert.ok(tvText.includes('Résistant'), 'rôles révélés sur la TV en fin de partie');
+  await tv.close();
+  console.log('  ✓ écran TV synchronisé (public en jeu, rôles à la fin)');
 
   // --- Partie B : 5 rejets de vote consécutifs → espions ------------
   await click('[data-action="replaySame"]');
@@ -439,6 +461,16 @@ async function main() {
   assert.strictEqual(st.screen, 'board');
   assert.strictEqual(st.game.phase, 'team');
   console.log('  ✓ reprise de partie après rechargement');
+
+  // --- Bouton 📺 sans support Cast (parcours iPhone) ----------------
+  await page.goto(BASE_URL + '/?nocast=1');
+  await page.waitForSelector('[data-action="resume"]');
+  await click('[data-action="resume"]');
+  await click('[data-action="castBtn"]');
+  const castModalText = await page.locator('.modal').innerText();
+  assert.ok(castModalText.includes('iPhone'), 'modale explicative iPhone affichée');
+  await click('[data-action="castOk"]');
+  console.log('  ✓ bouton TV : modale explicative quand la diffusion est indisponible');
 
   await browser.close();
 

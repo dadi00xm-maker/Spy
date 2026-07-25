@@ -62,7 +62,8 @@
       timerMin: 0
     },
     game: null,
-    quitAsk: false
+    quitAsk: false,
+    castAsk: false
   };
 
   var timer = { left: 0, running: false, handle: null, finished: false };
@@ -109,6 +110,45 @@
     };
   }
 
+  // État PUBLIC uniquement, pour l'écran TV : jamais les rôles ni les
+  // choix secrets tant que la partie n'est pas terminée.
+  function publicState() {
+    var game = g();
+    if (!game) return null;
+    var over = !!game.winner;
+    var outcome = null;
+    if (game.phase === 'missionReveal' &&
+        game.revealCards.every(function (c) { return c.flipped; })) {
+      outcome = missionOutcome();
+      outcome = { result: outcome.result, fails: outcome.fails, needed: outcome.needed };
+    }
+    return {
+      lang: state.lang,
+      screen: state.screen,
+      phase: game.phase,
+      names: game.players.map(function (p) { return p.name; }),
+      roles: over ? game.players.map(function (p) { return p.role; }) : null,
+      specials: over ? game.players.map(function (p) { return p.special; }) : null,
+      round: game.round,
+      missions: game.missions.map(function (m) { return m ? m.result : null; }),
+      sizes: RULES.teamSizes(game.players.length),
+      voteTrack: game.voteTrack,
+      maxRejections: RULES.MAX_REJECTIONS,
+      leader: game.leader,
+      team: game.team.slice(),
+      lastVote: (game.phase === 'voteResult' && game.lastVote)
+        ? { votes: game.lastVote.votes.slice(), approved: game.lastVote.approved } : null,
+      revealCards: game.phase === 'missionReveal'
+        ? game.revealCards.map(function (c) { return c.flipped ? c.card : '?'; }) : null,
+      outcome: outcome,
+      decisive: RULES.isDecisive(game.missions, game.round, game.players.length),
+      winner: game.winner,
+      winReason: game.winReason,
+      assassination: game.assassination
+        ? { name: game.assassination.name, wasCommander: game.assassination.wasCommander } : null
+    };
+  }
+
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -117,6 +157,7 @@
         screen: state.screen
       }));
     } catch (e) { /* stockage indisponible : on joue sans sauvegarde */ }
+    if (window.SPYCAST && state.game) SPYCAST.sync(publicState());
   }
 
   function loadSave() {
@@ -731,11 +772,26 @@
       '  <button class="btn btn-link" data-action="askQuit">✕ ' + t('board.quit') + '</button>' +
       '  <h2>' + t('app.title') + '</h2>' +
       '  <span class="topbar-right">' +
+      '    <button class="btn btn-link" data-action="castBtn">📺</button>' +
       '    <button class="btn btn-link" data-action="toggleVoice">' + (g().voice ? '🔊' : '🔇') + '</button>' +
       '    <button class="btn btn-link" data-action="rules">?</button>' +
       '  </span>' +
       '</header>' +
       missionTrack() + voteTrackBar();
+  }
+
+  function castModal() {
+    if (!state.castAsk) return '';
+    return '' +
+      '<div class="modal-back">' +
+      '  <div class="modal">' +
+      '    <p><b>📺 ' + t('cast.iosTitle') + '</b></p>' +
+      '    <p class="hint">' + t('cast.iosText') + '</p>' +
+      '    <div class="modal-btns">' +
+      '      <button class="btn btn-primary" data-action="castOk">' + t('cast.ok') + '</button>' +
+      '    </div>' +
+      '  </div>' +
+      '</div>';
   }
 
   function quitModal() {
@@ -763,7 +819,7 @@
       case 'missionReveal': html += viewMissionReveal(); break;
       case 'assassin': html += viewAssassin(); break;
     }
-    html += quitModal() + '</div>';
+    html += quitModal() + castModal() + '</div>';
     return html;
   }
 
@@ -1381,9 +1437,25 @@
     quitYes: function () {
       state.quitAsk = false;
       timerStop();
+      if (window.SPYCAST) SPYCAST.stop();
       clearGame();
       state.screen = 'home';
-    }
+    },
+
+    castBtn: function () {
+      if (window.SPYCAST && SPYCAST.supported) {
+        if (SPYCAST.connected()) {
+          SPYCAST.stop();
+        } else {
+          SPYCAST.start().then(function () {
+            SPYCAST.sync(publicState());
+          }).catch(function () { /* sélecteur fermé sans choisir */ });
+        }
+        return 'noRender';
+      }
+      state.castAsk = true;
+    },
+    castOk: function () { state.castAsk = false; }
   };
 
   document.addEventListener('click', function (e) {

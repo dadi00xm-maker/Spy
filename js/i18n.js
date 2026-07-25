@@ -159,6 +159,15 @@ var I18N = {
     'rules.table.teams': 'Équipes (missions 1→5)',
     'rules.tip': 'Les votes parlent plus que les discours : observe qui protège qui.',
 
+    'cast.iosTitle': 'Diffusion TV',
+    'cast.iosText': 'Sur iPhone, la diffusion TV arrivera avec l’application native (App Store). Dès maintenant : depuis un téléphone Android (Chrome) avec Chromecast, Android TV ou Google TV, ce bouton envoie le plateau sur la télé — les cartes secrètes restent sur le téléphone.',
+    'cast.ok': 'Compris',
+    'cast.tvWaiting': 'En attente de la partie…',
+    'cast.tvDealing': 'Distribution des rôles en cours… 🤫',
+    'cast.tvMission': 'Mission en cours… 🤫',
+    'cast.tvVote': 'Vote en cours 👍👎',
+    'cast.tvTeam': '{leader} compose son équipe',
+
     'quit.confirm': 'Abandonner la partie en cours ?',
     'quit.yes': 'Oui, quitter',
     'quit.no': 'Non, continuer',
@@ -326,6 +335,15 @@ var I18N = {
     'rules.table.spies': 'Spies',
     'rules.table.teams': 'Teams (missions 1→5)',
     'rules.tip': 'Votes speak louder than speeches: watch who protects who.',
+
+    'cast.iosTitle': 'TV casting',
+    'cast.iosText': 'On iPhone, TV casting will arrive with the native app (App Store). Available right now: from an Android phone (Chrome) with Chromecast, Android TV or Google TV, this button sends the board to the TV — secret cards stay on the phone.',
+    'cast.ok': 'Got it',
+    'cast.tvWaiting': 'Waiting for the game…',
+    'cast.tvDealing': 'Dealing the secret roles… 🤫',
+    'cast.tvMission': 'Mission in progress… 🤫',
+    'cast.tvVote': 'Vote in progress 👍👎',
+    'cast.tvTeam': '{leader} is picking a team',
 
     'quit.confirm': 'Abandon the current game?',
     'quit.yes': 'Yes, quit',

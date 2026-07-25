@@ -34,6 +34,12 @@ compte, aucune donnée collectée.
   aussi un fond neutre illisible à distance.
 - **Thème clair ou sombre** ☀️🌙 : bouton sur l'écran d'accueil, préférence
   mémorisée.
+- **Mode TV (bêta)** 📺 : depuis un téléphone Android (Chrome), le bouton 📺
+  du plateau envoie l'écran public du jeu (missions, votes, chef, résultats)
+  sur Chromecast / Android TV / Google TV — les cartes secrètes restent sur
+  le téléphone. La page `tv.html` peut aussi être ouverte sur un PC branché
+  en HDMI (synchronisation locale entre onglets). Sur iPhone, la diffusion
+  arrivera avec l'application native.
 - **Annonceur vocal** 🔊 : l'app annonce à voix haute à qui passer le
   téléphone, les résultats des votes et des missions, et le vainqueur
   (synthèse vocale du téléphone, FR/EN, bouton muet en cours de partie).
