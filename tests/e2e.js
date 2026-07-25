@@ -133,11 +133,13 @@ async function main() {
   await page.waitForSelector('[data-action="toSetup"]');
   await shot('01-accueil');
 
-  // Bascule de langue FR → EN → FR.
+  // Le titre est « SPY » dans les deux langues ; la bascule FR/EN se vérifie
+  // sur un libellé traduit.
+  assert.ok((await page.locator('.title').innerText()).includes('SPY'), 'titre Spy');
   await click('[data-action="toggleLang"]');
-  assert.ok((await page.locator('.title').innerText()).includes('RESISTANCE'), 'titre anglais');
+  assert.ok((await page.locator('[data-action="rules"]').innerText()).includes('How to play'), 'interface anglaise');
   await click('[data-action="toggleLang"]');
-  assert.ok((await page.locator('.title').innerText()).includes('RÉSISTANCE'), 'titre français');
+  assert.ok((await page.locator('[data-action="rules"]').innerText()).includes('Règles du jeu'), 'interface française');
   console.log('  ✓ bascule FR/EN');
 
   // Bascule de thème clair/sombre.
@@ -274,7 +276,7 @@ async function main() {
   assert.strictEqual(st.screen, 'gameover');
   assert.strictEqual(st.game.winner, 'res');
   await shot('09-fin-resistance');
-  console.log('  ✓ partie C : victoire de la Résistance (3 succès)');
+  console.log('  ✓ partie C : victoire des Agents (3 succès)');
 
   // --- Partie D : mode Commandant, l'Assassin vise juste ------------
   await click('[data-action="toSetup"]');
@@ -327,7 +329,7 @@ async function main() {
   assert.strictEqual(st.screen, 'gameover');
   assert.strictEqual(st.game.winner, 'res');
   assert.ok(st.game.assassination && !st.game.assassination.wasCommander);
-  console.log('  ✓ partie E : l’Assassin se trompe, la Résistance l’emporte');
+  console.log('  ✓ partie E : l’Assassin se trompe, les Agents l’emportent');
 
   // --- Reprise de partie (sauvegarde locale) ------------------------
   await click('[data-action="toSetup"]');

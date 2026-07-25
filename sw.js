@@ -1,5 +1,5 @@
 /* Service worker : mise en cache de l'application pour jouer hors ligne. */
-var CACHE = 'resistance-v8';
+var CACHE = 'spy-v9';
 var ASSETS = [
   './',
   './index.html',

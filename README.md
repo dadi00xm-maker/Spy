@@ -1,9 +1,9 @@
-# La Résistance — Compagnon de jeu 🕵️
+# Spy 🕵️ — le traître est parmi vous
 
-Application compagnon **non officielle** pour jouer au jeu de déduction sociale
-*The Resistance* entre amis, avec **un seul téléphone** qui passe de main en main.
-5 à 10 joueurs : la majorité appartient à la Résistance, mais des espions
-infiltrés cherchent à saboter les missions…
+**Spy** est un jeu de déduction sociale (la grande famille du Loup-garou et de
+Mafia) qui se joue entre amis avec **un seul téléphone** qui passe de main en
+main. 5 à 10 joueurs : la majorité sont des Agents, mais des espions infiltrés
+cherchent à saboter les missions…
 
 C'est une **PWA** (application web) : elle s'installe sur l'écran d'accueil
 d'un téléphone et fonctionne **entièrement hors ligne**. Aucun serveur, aucun
@@ -14,10 +14,10 @@ compte, aucune donnée collectée.
 - **Distribution secrète des rôles** : chacun retourne sa carte d'un simple
   toucher (animation 3D) et la re-cache avant de passer le téléphone. Les
   espions découvrent leurs complices.
-- **Mode Commandant (optionnel)** : le Commandant connaît les espions ; si la
-  Résistance réussit 3 missions, l'Assassin des espions peut l'éliminer au
+- **Mode Commandant (optionnel)** : le Commandant connaît les espions ; si les
+  Agents réussissent 3 missions, l'Assassin des espions peut l'éliminer au
   dernier moment pour voler la victoire.
-- **Suivi complet de la partie** : 5 missions, tailles d'équipe officielles,
+- **Suivi complet de la partie** : 5 missions, tailles d'équipe équilibrées,
   rotation du chef d'équipe, piste des votes rejetés (5 rejets = victoire des
   espions), règle des « 2 échecs » pour la mission 4 à partir de 7 joueurs.
 - **Vote public** pour approuver ou rejeter chaque équipe.
@@ -28,8 +28,8 @@ compte, aucune donnée collectée.
   identique pour tous les rôles (mêmes fonds de cartes, rien de désactivé —
   seules les étiquettes sont colorées : Sabotage en rouge, Succès en bleu),
   l'ordre des deux cartes est tiré au sort pour chaque joueur (la position du
-  doigt ne révèle rien), et un résistant qui touche Sabotage sélectionne
-  automatiquement Succès (règle officielle). Les cartes de rôle utilisent
+  doigt ne révèle rien), et un Agent qui touche Sabotage sélectionne
+  automatiquement Succès (règle du jeu). Les cartes de rôle utilisent
   aussi un fond neutre illisible à distance.
 - **Thème clair ou sombre** ☀️🌙 : bouton sur l'écran d'accueil, préférence
   mémorisée.
@@ -123,7 +123,7 @@ tests/                Tests de la logique
 
 ## ⚖️ Mentions
 
-Projet de fan, développé pour un usage privé entre amis. Non affilié aux
-auteurs ou éditeurs du jeu de société *The Resistance* ni à aucune application
-existante. Tout le code, les textes et les visuels de ce dépôt sont originaux
-(licence MIT).
+**Spy** est un jeu original appartenant à la grande famille des jeux de
+déduction sociale (Mafia, Loup-garou) — des mécaniques de genre librement
+réutilisables. Tout le code, les textes et les visuels de ce dépôt sont des
+créations originales (licence MIT).

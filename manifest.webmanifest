@@ -1,7 +1,7 @@
 {
-  "name": "La Résistance — Compagnon de jeu",
-  "short_name": "Résistance",
-  "description": "Compagnon non officiel pour le jeu de déduction sociale : rôles secrets, missions, votes. 5 à 10 joueurs, un seul téléphone, hors ligne.",
+  "name": "Spy — Jeu d'espions",
+  "short_name": "Spy",
+  "description": "Jeu de déduction sociale : rôles secrets, missions, votes, annonceur vocal. 5 à 10 joueurs, un seul téléphone, hors ligne. Le traître est parmi vous.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",

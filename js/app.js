@@ -1,7 +1,7 @@
 /*
- * La Résistance — compagnon de jeu (PWA hors ligne, un seul téléphone).
- * Machine à états : home → setup → reveal → board (team / vote / mission /
- * missionReveal) → gameover.
+ * Spy — jeu de déduction sociale (PWA hors ligne, un seul téléphone).
+ * Machine à états : home → setup → reveal → ceremony → board (team / vote /
+ * mission / missionReveal / assassin) → gameover.
  */
 (function () {
   'use strict';
