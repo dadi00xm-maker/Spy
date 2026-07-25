@@ -5,7 +5,7 @@
 var I18N = {
   fr: {
     'app.title': 'Spy',
-    'app.tagline': 'Le traître est parmi vous — 5 à 15 joueurs',
+    'app.tagline': 'Le traître est parmi vous — 4 à 15 joueurs',
     'app.unofficial': 'Un jeu original — fait en Tunisie 🇹🇳',
 
     'home.newGame': 'Nouvelle partie',
@@ -18,6 +18,7 @@ var I18N = {
     'setup.title': 'Nouvelle partie',
     'setup.playerCount': 'Nombre de joueurs',
     'setup.spiesInfo': '{res} agents · {spy} espions',
+    'setup.spiesInfoOne': '{res} agents · 1 seul espion (format court : 3 manches)',
     'setup.namePlaceholder': 'Joueur {i}',
     'setup.options': 'Options',
     'setup.knownSpies': 'Les espions se connaissent',
@@ -47,6 +48,7 @@ var I18N = {
     'reveal.spiesAre': 'Les espions :',
     'reveal.accomplices': 'Tes complices :',
     'reveal.blindSpies': 'Variante à l’aveugle : tu ne connais pas tes complices.',
+    'reveal.soloSpy': 'Tu es le seul espion — personne pour te couvrir.',
     'reveal.seen': 'J’ai mémorisé mon rôle',
     'reveal.next': 'Joueur suivant',
     'reveal.startGame': 'Commencer la partie',
@@ -145,6 +147,7 @@ var I18N = {
     'rules.trap2': 'Mission 4 à 7 joueurs ou plus : il faut 2 Sabotages.',
     'rules.trap3': 'Égalité 2-2 → finale décisive : 2 Sabotages requis.',
     'rules.trap4': 'Un Agent joue toujours Succès, quoi qu’il touche.',
+    'rules.trap5': 'À 4 joueurs : format court — 1 seul espion, 3 manches, premier camp à 2 missions.',
     'rules.options.h': 'Options',
     'rules.opt.cmd': 'Mode Commandant : il connaît les espions… mais leur Assassin peut l’éliminer à la fin pour voler la victoire.',
     'rules.opt.blind': 'Espions à l’aveugle : ils ne se connaissent plus.',
@@ -169,7 +172,7 @@ var I18N = {
 
   en: {
     'app.title': 'Spy',
-    'app.tagline': 'The traitor is among you — 5 to 15 players',
+    'app.tagline': 'The traitor is among you — 4 to 15 players',
     'app.unofficial': 'An original game — made in Tunisia 🇹🇳',
 
     'home.newGame': 'New game',
@@ -182,6 +185,7 @@ var I18N = {
     'setup.title': 'New game',
     'setup.playerCount': 'Number of players',
     'setup.spiesInfo': '{res} agents · {spy} spies',
+    'setup.spiesInfoOne': '{res} agents · a single spy (short format: 3 rounds)',
     'setup.namePlaceholder': 'Player {i}',
     'setup.options': 'Options',
     'setup.knownSpies': 'Spies know each other',
@@ -211,6 +215,7 @@ var I18N = {
     'reveal.spiesAre': 'The spies:',
     'reveal.accomplices': 'Your accomplices:',
     'reveal.blindSpies': 'Blind variant: you don’t know your accomplices.',
+    'reveal.soloSpy': 'You are the only spy — no one to cover for you.',
     'reveal.seen': 'Got it, role memorized',
     'reveal.next': 'Next player',
     'reveal.startGame': 'Start the game',
@@ -309,6 +314,7 @@ var I18N = {
     'rules.trap2': 'Mission 4 with 7+ players: 2 Sabotages needed.',
     'rules.trap3': '2-2 tie → decisive final: 2 Sabotages required.',
     'rules.trap4': 'An Agent always plays Success, whatever they tap.',
+    'rules.trap5': 'With 4 players: short format — a single spy, 3 rounds, first side to 2 missions.',
     'rules.options.h': 'Options',
     'rules.opt.cmd': 'Commander mode: he knows the spies… but their Assassin can eliminate him at the end to steal the win.',
     'rules.opt.blind': 'Blind spies: they no longer know each other.',

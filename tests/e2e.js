@@ -388,6 +388,43 @@ async function main() {
   assert.strictEqual(st.game.winner, 'res');
   console.log('  ✓ partie F : finale décisive à 2-2 — 1 sabotage ne suffit plus');
 
+  // --- Partie G : format court à 4 joueurs (1 espion, 3 manches) ----
+  await click('[data-action="toSetup"]');
+  await click('[data-action="countMinus"]'); // 5 → 4
+  assert.strictEqual((await page.locator('.counter-value').innerText()).trim(), '4', 'compteur à 4');
+  await click('[data-action="startGame"]');
+  await revealAll(false); // pas de cérémonie : un seul espion, pas de Commandant
+  st = await state();
+  assert.strictEqual(st.game.players.length, 4);
+  assert.strictEqual(st.game.missions.length, 3, '3 manches en format court');
+  const spyG = st.game.players.findIndex(p => p.role === 'spy');
+  const resG = st.game.players.map((p, i) => p.role === 'res' ? i : -1).filter(i => i !== -1);
+  assert.strictEqual(resG.length, 3, 'un seul espion à 4 joueurs');
+  // Manche 1 (k=3) : l'espion sabote.
+  await pickTeam([spyG, resG[0], resG[1]]);
+  await voteAll('up', true);
+  await runMission(true);
+  await click('[data-action="missionDone"]');
+  // Manche 2 (k=2) : agents seuls → succès. Score 1-1.
+  await pickTeam([resG[0], resG[1]]);
+  await voteAll('up', true);
+  await runMission(true);
+  await click('[data-action="missionDone"]');
+  st = await state();
+  assert.strictEqual(st.game.round, 2);
+  // Pas de finale décisive en format court (1 sabotage doit suffire).
+  assert.strictEqual(await page.locator('.phase .warn').count(), 0, 'pas de bandeau décisif à 4');
+  assert.strictEqual(await page.locator('.mnode').count(), 3, 'piste de 3 missions');
+  // Manche 3 (k=3) : l'espion sabote seul → mission échouée → 2e victoire espionne.
+  await pickTeam([spyG, resG[0], resG[1]]);
+  await voteAll('up', true);
+  await runMission(true);
+  await click('[data-action="missionDone"]');
+  st = await state();
+  assert.strictEqual(st.screen, 'gameover');
+  assert.strictEqual(st.game.winner, 'spy');
+  console.log('  ✓ partie G : format court à 4 joueurs — l’espion l’emporte 2-1');
+
   // --- Reprise de partie (sauvegarde locale) ------------------------
   await click('[data-action="toSetup"]');
   await click('[data-action="startGame"]');

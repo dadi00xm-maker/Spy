@@ -2,8 +2,9 @@
 
 **Spy** est un jeu de déduction sociale (la grande famille du Loup-garou et de
 Mafia) qui se joue entre amis avec **un seul téléphone** qui passe de main en
-main. 5 à 15 joueurs : la majorité sont des Agents, mais des espions infiltrés
-cherchent à saboter les missions…
+main. 4 à 15 joueurs : la majorité sont des Agents, mais des espions infiltrés
+cherchent à saboter les missions… (À 4 joueurs : format court — 1 seul
+espion, 3 manches, premier camp à 2 missions.)
 
 C'est une **PWA** (application web) : elle s'installe sur l'écran d'accueil
 d'un téléphone et fonctionne **entièrement hors ligne**. Aucun serveur, aucun
@@ -81,6 +82,7 @@ python3 -m http.server 8000
 
 | Joueurs | Espions | Équipes (missions 1→5) |
 |:-------:|:-------:|:----------------------:|
+| 4       | 1       | 3 · 2 · 3 *(3 manches)* |
 | 5       | 2       | 2 · 3 · 2 · 3 · 3      |
 | 6       | 2       | 2 · 3 · 4 · 3 · 4      |
 | 7       | 3       | 2 · 3 · 3 · 4 · 4      |

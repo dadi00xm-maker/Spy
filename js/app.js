@@ -87,7 +87,7 @@
       round: 0,
       leader: Math.floor(Math.random() * n),
       voteTrack: 0,
-      missions: [null, null, null, null, null],
+      missions: RULES.teamSizes(n).map(function () { return null; }),
       phase: 'reveal', // reveal | team | vote | voteResult | mission | missionReveal | assassin
       revealIdx: 0,
       revealStage: 'pass', // pass | card
@@ -270,7 +270,7 @@
 
   function ceremonySteps() {
     var s = [{ text: t('cer.close'), wait: 3000, tick: true }];
-    if (g().knownSpies) {
+    if (g().knownSpies && spyNames().length > 1) {
       s.push({ text: t('cer.spiesOpen'), wait: 5000, tick: true });
       s.push({ text: t('cer.spiesClose'), wait: 2000, tick: true });
     }
@@ -452,7 +452,7 @@
 
   function missionOutcome() {
     var fails = g().missionChoices.filter(function (ok) { return !ok; }).length;
-    var decisive = RULES.isDecisive(g().missions, g().round);
+    var decisive = RULES.isDecisive(g().missions, g().round, nPlayers());
     var result = RULES.missionResult(nPlayers(), g().round, fails, decisive);
     return {
       fails: fails,
@@ -470,7 +470,7 @@
       team: g().team.slice(),
       leader: g().leader
     };
-    var w = RULES.winner(g().missions);
+    var w = RULES.winner(g().missions, nPlayers());
     if (w === 'res' && g().commanderMode) {
       // Dernière chance des espions : tenter d'éliminer le Commandant.
       g().assassinPick = null;
@@ -485,8 +485,8 @@
       g().team = [];
       g().phase = 'team';
       timerResetTo(g().timerMin);
-      // Annonce de la finale décisive (égalité 2-2 avant la 5e mission).
-      if (g().round === 4 && RULES.isDecisive(g().missions, 4)) {
+      // Annonce de la finale décisive (égalité parfaite avant la dernière).
+      if (RULES.isDecisive(g().missions, g().round, nPlayers())) {
         speak(t('decisive.hint'));
       }
     }
@@ -559,7 +559,8 @@
       '      <div class="counter-value">' + c + '</div>' +
       '      <button class="btn btn-round" data-action="countPlus"' + (c >= RULES.MAX_PLAYERS ? ' disabled' : '') + '>+</button>' +
       '    </div>' +
-      '    <p class="hint center">' + t('setup.spiesInfo', { res: c - spies, spy: spies }) + '</p>' +
+      '    <p class="hint center">' +
+      t(spies === 1 ? 'setup.spiesInfoOne' : 'setup.spiesInfo', { res: c - spies, spy: spies }) + '</p>' +
       '    <div class="names">' + inputs + '</div>' +
       '  </section>' +
       '  <section class="card-panel">' +
@@ -616,7 +617,9 @@
       ? '<span class="role-badge">🗡 ' + t('reveal.assassinBadge') + '</span>' : '';
     var extra = '';
     if (isSpy) {
-      if (game.knownSpies) {
+      if (spyNames().length === 1) {
+        extra = '<p class="accomplices-label">' + t('reveal.soloSpy') + '</p>';
+      } else if (game.knownSpies) {
         var others = spiesOf(game.revealIdx);
         extra = '<p class="accomplices-label">' + t('reveal.accomplices') + '</p>' +
           '<p class="accomplices">' + others.map(esc).join(' · ') + '</p>';
@@ -693,7 +696,7 @@
     var game = g();
     var sizes = RULES.teamSizes(nPlayers());
     var html = '<div class="mtrack">';
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < game.missions.length; i++) {
       var m = game.missions[i];
       var cls = 'mnode';
       var label = sizes[i];
@@ -703,7 +706,7 @@
       var badge = '';
       if (i === 3 && nPlayers() >= 7) {
         badge = '<span class="mbadge">' + t('board.twoFails') + '</span>';
-      } else if (i === 4 && RULES.isDecisive(game.missions, 4)) {
+      } else if (RULES.isDecisive(game.missions, i, nPlayers())) {
         badge = '<span class="mbadge">🔥 ' + t('board.twoFails') + '</span>';
       }
       html += '<div class="mslot"><div class="' + cls + '">' + label + '</div>' + badge + '</div>';
@@ -805,7 +808,7 @@
         '  <button class="btn btn-mini" data-action="timerReset">' + t('timer.reset') + '</button>' +
         '</div>'
       : '';
-    var decisiveBanner = (game.round === 4 && RULES.isDecisive(game.missions, 4))
+    var decisiveBanner = RULES.isDecisive(game.missions, game.round, nPlayers())
       ? '<p class="warn">🔥 ' + t('decisive.hint') + '</p>' : '';
     return '' +
       '<section class="phase">' +
@@ -1048,6 +1051,7 @@
       '    <div class="trap">✌️ ' + t('rules.trap2') + '</div>' +
       '    <div class="trap">🔥 ' + t('rules.trap3') + '</div>' +
       '    <div class="trap">🛡️ ' + t('rules.trap4') + '</div>' +
+      '    <div class="trap">🎯 ' + t('rules.trap5') + '</div>' +
       '  </section>' +
 
       '  <section class="card-panel">' +
@@ -1154,7 +1158,7 @@
       if (game.revealIdx + 1 >= nPlayers()) {
         // Cérémonie d'ouverture si l'annonceur est actif et qu'il y a
         // quelque chose à mettre en scène (complices ou Commandant).
-        if (game.voice && (game.knownSpies || game.commanderMode)) {
+        if (game.voice && ((game.knownSpies && spyNames().length > 1) || game.commanderMode)) {
           state.screen = 'ceremony';
           save();
         } else {

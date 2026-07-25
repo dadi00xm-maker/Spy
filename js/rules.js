@@ -6,11 +6,13 @@ var RULES = (function () {
   'use strict';
 
   /* 5-10 joueurs : répartition classique du genre. 11-15 joueurs :
-     extension Spy, calibrée pour garder ~1/3 d'espions et des équipes
-     où un espion n'est jamais garanti. */
-  var SPY_COUNT = { 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4, 11: 4, 12: 4, 13: 5, 14: 5, 15: 6 };
+     extension Spy (~1/3 d'espions). 4 joueurs : « format court » Spy —
+     1 seul espion, 3 manches (premier camp à 2 missions), équipes
+     [3, 2, 3] pour ne pas démasquer l'espion dès la première équipe. */
+  var SPY_COUNT = { 4: 1, 5: 2, 6: 2, 7: 3, 8: 3, 9: 3, 10: 4, 11: 4, 12: 4, 13: 5, 14: 5, 15: 6 };
 
   var TEAM_SIZES = {
+    4: [3, 2, 3],
     5: [2, 3, 2, 3, 3],
     6: [2, 3, 4, 3, 4],
     7: [2, 3, 3, 4, 4],
@@ -32,6 +34,16 @@ var RULES = (function () {
     return TEAM_SIZES[nPlayers];
   }
 
+  // Nombre de manches de la partie (3 en format court, 5 sinon).
+  function missionsCount(nPlayers) {
+    return TEAM_SIZES[nPlayers].length;
+  }
+
+  // Missions à gagner : la majorité des manches (2 sur 3, 3 sur 5).
+  function winsNeeded(nPlayers) {
+    return Math.floor(missionsCount(nPlayers) / 2) + 1;
+  }
+
   // La 4e mission (index 3) demande 2 sabotages à partir de 7 joueurs.
   // La finale « décisive » (jouée à égalité 2-2) en demande toujours 2.
   function failsNeeded(nPlayers, missionIndex, decisive) {
@@ -39,11 +51,15 @@ var RULES = (function () {
     return (missionIndex === 3 && nPlayers >= 7) ? 2 : 1;
   }
 
-  // Vrai si la 5e mission se joue alors que le score est à 2 partout.
-  function isDecisive(missions, missionIndex) {
-    if (missionIndex !== 4) return false;
+  // Vrai si la DERNIÈRE mission se joue à égalité parfaite (2-2 sur 5
+  // manches). Jamais en format court : avec un seul espion, exiger deux
+  // sabotages rendrait la finale ingagnable pour lui.
+  function isDecisive(missions, missionIndex, nPlayers) {
+    if (spyCount(nPlayers) < 2) return false;
+    if (missionIndex !== missionsCount(nPlayers) - 1) return false;
     var t = tally(missions);
-    return t.success === 2 && t.fail === 2;
+    var w = winsNeeded(nPlayers);
+    return t.success === w - 1 && t.fail === w - 1;
   }
 
   // Mélange de Fisher-Yates ; rng injectable pour les tests.
@@ -107,25 +123,26 @@ var RULES = (function () {
   }
 
   // 'res', 'spy' ou null si la partie continue.
-  function winner(missions) {
+  function winner(missions, nPlayers) {
     var t = tally(missions);
-    if (t.success >= MISSIONS_TO_WIN) return 'res';
-    if (t.fail >= MISSIONS_TO_WIN) return 'spy';
+    var w = winsNeeded(nPlayers);
+    if (t.success >= w) return 'res';
+    if (t.fail >= w) return 'spy';
     return null;
   }
 
-  var MIN_PLAYERS = 5;
+  var MIN_PLAYERS = 4;
   var MAX_PLAYERS = 15;
-  var MISSIONS_TO_WIN = 3;
   var MAX_REJECTIONS = 5;
 
   return {
     MIN_PLAYERS: MIN_PLAYERS,
     MAX_PLAYERS: MAX_PLAYERS,
-    MISSIONS_TO_WIN: MISSIONS_TO_WIN,
     MAX_REJECTIONS: MAX_REJECTIONS,
     spyCount: spyCount,
     teamSizes: teamSizes,
+    missionsCount: missionsCount,
+    winsNeeded: winsNeeded,
     failsNeeded: failsNeeded,
     isDecisive: isDecisive,
     shuffle: shuffle,
