@@ -1,5 +1,5 @@
 /* Service worker : mise en cache de l'application pour jouer hors ligne. */
-var CACHE = 'resistance-v2';
+var CACHE = 'resistance-v3';
 var ASSETS = [
   './',
   './index.html',
@@ -30,17 +30,19 @@ self.addEventListener('activate', function (e) {
   );
 });
 
+/* Réseau d'abord (les mises à jour arrivent dès le rechargement),
+   cache en secours (le jeu reste jouable hors ligne). */
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then(function (hit) {
-      return hit || fetch(e.request).then(function (res) {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
-        return res;
-      });
+    fetch(e.request).then(function (res) {
+      var copy = res.clone();
+      caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+      return res;
     }).catch(function () {
-      return caches.match('./index.html');
+      return caches.match(e.request, { ignoreSearch: true }).then(function (hit) {
+        return hit || caches.match('./index.html');
+      });
     })
   );
 });
