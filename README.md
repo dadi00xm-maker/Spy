@@ -46,9 +46,12 @@ compte, aucune donnée collectée.
   salon avec code à 4 lettres, carte secrète sur chaque écran, votes et
   missions joués simultanément. Le téléphone de l'hôte fait autorité et
   les rôles ne sont jamais envoyés aux autres téléphones avant la fin de
-  la partie (documents privés par joueur). Synchronisation Firebase
-  (Auth + Firestore) chargée uniquement dans ce mode — le jeu à un
-  téléphone reste 100 % hors ligne et sans dépendance.
+  la partie (documents privés par joueur). Invitation des amis par lien de
+  partage (`?join=CODE`), rappel de son rôle 👁 à tout moment, rappel du
+  camp sur l'écran de mission, et reprise de la partie en cours depuis
+  l'écran d'accueil. Synchronisation Firebase (Auth + Firestore) chargée
+  uniquement dans ce mode — le jeu à un téléphone reste 100 % hors ligne
+  et sans dépendance.
 - **Annonceur vocal** 🔊 : l'app annonce à voix haute à qui passer le
   téléphone, les résultats des votes et des missions, et le vainqueur
   (synthèse vocale du téléphone, FR/EN, bouton muet en cours de partie).

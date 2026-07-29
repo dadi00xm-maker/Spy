@@ -571,7 +571,8 @@
       '  <div class="stack">' +
       resume +
       '    <button class="btn btn-primary" data-action="toSetup">' + t('home.newGame') + '</button>' +
-      '    <button class="btn btn-ghost" data-action="onlineBtn">📱 ' + t('home.online') + '</button>' +
+      '    <button class="btn btn-ghost" data-action="onlineBtn">📱 ' +
+      t(ONLINE.available() && ONLINE.savedRoom() ? 'home.onlineResume' : 'home.online') + '</button>' +
       '    <button class="btn btn-ghost" data-action="rules">' + t('home.rules') + '</button>' +
       '    <button class="btn btn-link" data-action="toggleLang">🌐 ' + t('home.lang') + '</button>' +
       '    <button class="btn btn-link" data-action="toggleTheme">' +
@@ -1002,6 +1003,7 @@
       '  <p class="progress">' + pos + ' — ' + esc(p.name) + '</p>' +
       '  <h3>' + t('mission.pick') + '</h3>' +
       '  <p class="hint center">' + t('mission.pickHint') + '</p>' +
+      '  <p class="camp-line">' + t(p.role === 'spy' ? 'mission.youSpy' : 'mission.youRes') + '</p>' +
       '  <div class="mission-cards">' + cards + '</div>' +
       '  <p class="hint center">' + t('mission.rule') + '</p>' +
       confirmBar +
@@ -1550,6 +1552,18 @@
     rerender: render,
     goHome: function () { state.screen = 'home'; render(); }
   };
+
+  // Lien d'invitation « ?join=CODE » : ouvrir directement le mode en ligne.
+  (function () {
+    if (!new URLSearchParams(location.search).get('join')) return;
+    if (ONLINE.available()) {
+      state.screen = 'online';
+      ONLINE.open();
+    } else {
+      state.onlineAsk = true; // explique que le mode en ligne arrive
+    }
+    render();
+  })();
 
   // Petit accès de debug pour les tests automatisés.
   window.RESISTANCE_DEBUG = {

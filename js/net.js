@@ -276,9 +276,15 @@ var SPYNET = (function () {
         var app = window.firebase.initializeApp(config);
         auth = window.firebase.auth(app);
         db = window.firebase.firestore(app);
-        auth.onAuthStateChanged(function (u) {
-          user = u ? { uid: u.uid, name: u.displayName || (u.email || '').split('@')[0], email: u.email } : null;
-          authCbs.forEach(function (cb) { cb(user); });
+        // On attend la restauration de la session (premier signal d'état)
+        // pour que « reprendre la partie » sache si le joueur est connecté.
+        return new Promise(function (resolve) {
+          var first = true;
+          auth.onAuthStateChanged(function (u) {
+            user = u ? { uid: u.uid, name: u.displayName || (u.email || '').split('@')[0], email: u.email } : null;
+            authCbs.forEach(function (cb) { cb(user); });
+            if (first) { first = false; resolve(); }
+          });
         });
       });
       return loadP;

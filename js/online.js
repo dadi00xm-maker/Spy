@@ -13,6 +13,8 @@
 var ONLINE = (function () {
   'use strict';
 
+  var params = new URLSearchParams(location.search);
+
   /* État local de CE téléphone (jamais partagé). */
   var S = {
     view: 'idle',   // idle | loading | menu | register | login | lobby | game
@@ -25,6 +27,8 @@ var ONLINE = (function () {
     hostData: null, // bookkeeping de l'hôte ({ roles, votes, choices })
     flipped: false, // ma carte de rôle est-elle retournée ?
     readySent: false,
+    peek: false,    // revoir ma carte de rôle en cours de partie
+    pendingJoin: (params.get('join') || '').toUpperCase(), // lien d'invitation
     pick: [],       // sélection d'équipe (si je suis chef)
     mpick: null,    // index de la carte de mission touchée
     lastPhase: null,
@@ -33,6 +37,8 @@ var ONLINE = (function () {
   };
 
   var fields = { name: '', email: '', pass: '', code: '' };
+  if (/^[A-Z]{4}$/.test(S.pendingJoin)) fields.code = S.pendingJoin;
+  else S.pendingJoin = '';
 
   function UI() { return window.SPY_UI; }
   function t(k, v) { return UI().t(k, v); }
@@ -69,7 +75,10 @@ var ONLINE = (function () {
   function attach(code) {
     unsubscribe();
     S.code = code;
-    try { sessionStorage.setItem('spy-online-code', code); } catch (e) {}
+    S.pendingJoin = '';
+    // localStorage (et pas sessionStorage) : on peut fermer l'app et
+    // reprendre la partie en ligne plus tard depuis l'écran d'accueil.
+    try { localStorage.setItem('spy-online-code', code); } catch (e) {}
     S.unRoom = B().watchRoom(code, onRoom);
     S.unPriv = B().watchPrivate(code, me().uid, onPriv);
     if (isHost()) B().onActions(code, hostApply);
@@ -77,10 +86,11 @@ var ONLINE = (function () {
 
   function detach(toView) {
     unsubscribe();
-    try { sessionStorage.removeItem('spy-online-code'); } catch (e) {}
+    try { localStorage.removeItem('spy-online-code'); } catch (e) {}
     S.code = null; S.room = null; S.priv = null; S.hostData = null;
     S.flipped = false; S.readySent = false; S.pick = []; S.mpick = null;
-    S.lastPhase = null; S.error = null; S.info = null; S.busy = false;
+    S.peek = false; S.lastPhase = null; S.error = null; S.info = null;
+    S.busy = false;
     S.view = toView || 'menu';
   }
 
@@ -101,6 +111,7 @@ var ONLINE = (function () {
       S.lastPhase = phase;
       S.pick = [];
       S.mpick = null;
+      S.peek = false;
       if (phase === 'reveal') { S.flipped = false; S.readySent = false; }
     }
     S.view = room.state ? 'game' : 'lobby';
@@ -322,6 +333,32 @@ var ONLINE = (function () {
     B().sendAction(S.code, action);
   }
 
+  // Rejoint un salon (bouton, lien d'invitation ou reprise de partie).
+  function doJoin(code) {
+    S.busy = true; S.error = null;
+    B().joinRoom(code).then(function () {
+      S.busy = false;
+      attach(code);
+      S.view = 'lobby';
+      rr();
+    }, function (e) {
+      S.pendingJoin = '';
+      try { localStorage.removeItem('spy-online-code'); } catch (err) {}
+      setErr(errKey(e));
+      S.view = 'menu';
+      rr();
+    });
+  }
+
+  // Après connexion/inscription : on file au salon si un lien d'invitation
+  // (ou une partie à reprendre) attend, sinon au menu.
+  function afterAuth() {
+    S.busy = false;
+    if (S.pendingJoin) { doJoin(S.pendingJoin); return; }
+    S.view = 'menu';
+    rr();
+  }
+
   /* ------------------------------------------------------------------ */
   /* Vues                                                                */
   /* ------------------------------------------------------------------ */
@@ -439,6 +476,7 @@ var ONLINE = (function () {
       '<h3 class="ol-h center">' + t('ol.lobbyTitle') + '</h3>' +
       '<p class="hint center">' + t('ol.shareCode') + '</p>' +
       '<div class="ol-code">' + esc(S.code) + '</div>' +
+      '<button class="btn btn-ghost" data-action="ol_invite">📤 ' + t('ol.invite') + '</button>' +
       '<p class="hint center">' + t('ol.players', { x: n }) + '</p>' +
       '<div class="pgrid">' + rows + '</div>' +
       errLine() + hostPart +
@@ -471,18 +509,24 @@ var ONLINE = (function () {
     for (var v = 0; v < RULES.MAX_REJECTIONS; v++) {
       pips += '<span class="pip' + (v < state.voteTrack ? ' on' : '') + '"></span>';
     }
-    return topbar('ol_leave') + track +
+    // Bouton 👁 : revoir sa carte à tout moment (sauf pendant la
+    // distribution, où elle est déjà à l'écran).
+    var peekBtn = (state.phase !== 'reveal' && state.phase !== 'gameover' && S.priv)
+      ? '<button class="btn btn-link" data-action="ol_peek" title="' + esc(t('ol.myRole')) + '">👁</button>'
+      : '';
+    return '<header class="topbar">' +
+      '<button class="btn btn-link" data-action="ol_leave">✕ ' + t('ol.back') + '</button>' +
+      '<h2>' + t('app.title') + '</h2>' +
+      '<span class="topbar-right">' + peekBtn +
+      '<span class="progress">' + esc(S.code) + '</span></span>' +
+      '</header>' + track +
       '<div class="vtrack"><span class="vtrack-label">' + t('board.voteTrack') + '</span>' + pips + '</div>';
   }
 
-  function gReveal() {
-    var state = st();
+  // Ma carte de rôle (même dessin que le mode local). `flipped` contrôle la
+  // face visible ; `action` est le data-action posé sur la carte.
+  function roleCardHtml(flipped, action) {
     var p = S.priv;
-    var readyCount = Object.keys(state.ready).length;
-    var progress = '<p class="hint center">' + t('ol.readyCount', { x: readyCount, n: state.n }) + '</p>';
-    if (!p) {
-      return '<section class="phase center-phase"><p class="hint center">' + t('ol.loading') + '</p></section>';
-    }
     var isSpy = p.role === 'spy';
     var roleTitle = isSpy ? t('reveal.youAreSpy') : t('reveal.youAreRes');
     var roleHint = isSpy ? t('reveal.spyHint') : t('reveal.resHint');
@@ -494,21 +538,41 @@ var ONLINE = (function () {
           '<p class="accomplices">' + p.mates.map(esc).join(' · ') + '</p>'
         : '<p class="accomplices-label">' + t('reveal.soloSpy') + '</p>';
     }
-    var btn = S.readySent
-      ? '<button class="btn btn-primary btn-big" disabled>✓ ' + t('ol.readySent') + '</button>'
-      : '<button class="btn btn-primary btn-big" data-action="ol_ready">' + t('ol.ready') + '</button>';
     return '' +
-      '<section class="phase center-phase">' +
-      '<p class="hint center">' + t('ol.yourCard') + '</p>' +
       '<div class="role-card-wrap">' +
-      '<div class="role-card' + (S.flipped ? ' flipped' : '') + '" data-action="ol_flip" role="button" tabindex="0">' +
+      '<div class="role-card' + (flipped ? ' flipped' : '') + '" data-action="' + action + '" role="button" tabindex="0">' +
       '<div class="role-inner">' +
       '<div class="role-back"><div class="role-back-stamp">' + t('reveal.secret') + '</div></div>' +
       '<div class="role-front ' + (isSpy ? 'spy' : 'res') + '">' +
       '<div class="role-title">' + roleTitle + '</div>' +
       '<div class="role-icon">' + icon + '</div>' +
       '<p class="role-hint">' + roleHint + '</p>' + extra +
-      '</div></div></div></div>' +
+      '</div></div></div></div>';
+  }
+
+  // Revoir sa carte en cours de partie (un joueur peut oublier son camp).
+  function peekModal() {
+    if (!S.peek || !S.priv) return '';
+    return '<div class="modal-back peek-back" data-action="ol_peekClose">' +
+      roleCardHtml(true, 'ol_peekClose') +
+      '<p class="hint center">' + t('ol.peekClose') + '</p>' +
+      '</div>';
+  }
+
+  function gReveal() {
+    var state = st();
+    var readyCount = Object.keys(state.ready).length;
+    var progress = '<p class="hint center">' + t('ol.readyCount', { x: readyCount, n: state.n }) + '</p>';
+    if (!S.priv) {
+      return '<section class="phase center-phase"><p class="hint center">' + t('ol.loading') + '</p></section>';
+    }
+    var btn = S.readySent
+      ? '<button class="btn btn-primary btn-big" disabled>✓ ' + t('ol.readySent') + '</button>'
+      : '<button class="btn btn-primary btn-big" data-action="ol_ready">' + t('ol.ready') + '</button>';
+    return '' +
+      '<section class="phase center-phase">' +
+      '<p class="hint center">' + t('ol.yourCard') + '</p>' +
+      roleCardHtml(S.flipped, 'ol_flip') +
       progress + btn +
       '</section>';
   }
@@ -603,6 +667,10 @@ var ONLINE = (function () {
       return '<section class="phase center-phase"><h3>' + t('ol.missionTitle', { i: state.round + 1 }) + '</h3>' +
         '<p class="verdict neutral">✓ ' + t('ol.cardPlayed') + '</p>' + progress + '</section>';
     }
+    // Rappel du camp : ici chaque téléphone est personnel, on peut le dire
+    // en clair (un joueur distrait peut avoir oublié son rôle).
+    var campLine = '<p class="camp-line">' +
+      t(S.priv && S.priv.role === 'spy' ? 'mission.youSpy' : 'mission.youRes') + '</p>';
     // Mêmes règles d'affichage que le mode local : un résistant reçoit DEUX
     // cartes Succès ; un spy reçoit Succès + Sabotage (ordre imprévisible).
     var types = myMissionTypes();
@@ -621,7 +689,7 @@ var ONLINE = (function () {
       : '';
     return '<section class="phase center-phase">' +
       '<h3>' + t('mission.pick') + '</h3>' +
-      '<p class="hint center">' + t('mission.pickHint') + '</p>' +
+      campLine +
       '<div class="mission-cards">' + cards + '</div>' +
       '<p class="hint center">' + t('mission.rule') + '</p>' +
       confirmBar + progress +
@@ -701,7 +769,7 @@ var ONLINE = (function () {
       case 'gameover': body = gGameover(); break;
       default: body = '<p class="hint center">' + t('ol.loading') + '</p>';
     }
-    return screenWrap(header() + body);
+    return screenWrap(header() + body + peekModal());
   }
 
   /* ------------------------------------------------------------------ */
@@ -725,18 +793,16 @@ var ONLINE = (function () {
       if (fields.email.indexOf('@') === -1) { setErr('ol.errBadEmail'); return; }
       if (fields.pass.length < 6) { setErr('ol.errWeakPass'); return; }
       S.busy = true; S.error = null;
-      B().signUp(name, fields.email, fields.pass).then(function () {
-        S.busy = false; S.view = 'menu'; rr();
-      }, function (e) { setErr(errKey(e)); rr(); });
+      B().signUp(name, fields.email, fields.pass).then(afterAuth,
+        function (e) { setErr(errKey(e)); rr(); });
     },
 
     ol_login: function () {
       if (S.busy) return;
       if (fields.email.indexOf('@') === -1) { setErr('ol.errBadEmail'); return; }
       S.busy = true; S.error = null;
-      B().signIn(fields.email, fields.pass).then(function () {
-        S.busy = false; S.view = 'menu'; rr();
-      }, function (e) { setErr(errKey(e)); rr(); });
+      B().signIn(fields.email, fields.pass).then(afterAuth,
+        function (e) { setErr(errKey(e)); rr(); });
     },
 
     ol_forgot: function () {
@@ -766,15 +832,24 @@ var ONLINE = (function () {
       if (S.busy) return;
       var code = fields.code.trim().toUpperCase();
       if (code.length !== 4) { setErr('ol.errRoomNotFound'); return; }
-      S.busy = true; S.error = null;
-      B().joinRoom(code).then(function () {
-        S.busy = false;
-        attach(code);
-        S.view = 'lobby';
-        rr();
-      }, function (e) { setErr(errKey(e)); rr(); });
+      doJoin(code);
     },
 
+    ol_invite: function () {
+      var url = location.origin + location.pathname + '?join=' + S.code;
+      var text = t('ol.inviteText', { code: S.code });
+      if (navigator.share) {
+        navigator.share({ title: 'Spy', text: text, url: url }).catch(function () {});
+        return 'noRender';
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text + ' ' + url).catch(function () {});
+      }
+      S.info = 'ol.linkCopied';
+      S.error = null;
+    },
+    ol_peek: function () { S.peek = true; },
+    ol_peekClose: function () { S.peek = false; },
     ol_start: function () { send({ type: 'start' }); },
     ol_flip: function () { S.flipped = !S.flipped; },
     ol_ready: function () {
@@ -816,18 +891,13 @@ var ONLINE = (function () {
     open: function () {
       S.view = 'loading';
       B().ready().then(function () {
-        // Session encore valide ? On retente le dernier salon.
+        // Lien d'invitation ou partie à reprendre ? On y va directement.
         var saved = null;
-        try { saved = sessionStorage.getItem('spy-online-code'); } catch (e) {}
-        if (me() && saved) {
-          B().joinRoom(saved).then(function () {
-            attach(saved);
-            rr();
-          }, function () {
-            try { sessionStorage.removeItem('spy-online-code'); } catch (e) {}
-            S.view = 'menu';
-            rr();
-          });
+        try { saved = localStorage.getItem('spy-online-code'); } catch (e) {}
+        var target = S.pendingJoin || saved;
+        if (me() && target) {
+          S.pendingJoin = '';
+          doJoin(target);
         } else {
           S.view = 'menu';
           rr();
@@ -837,6 +907,11 @@ var ONLINE = (function () {
         setErr('ol.errNet');
         rr();
       });
+    },
+
+    // Une partie en ligne enregistrée à reprendre ? (bouton de l'accueil)
+    savedRoom: function () {
+      try { return localStorage.getItem('spy-online-code'); } catch (e) { return null; }
     },
 
     view: function () {

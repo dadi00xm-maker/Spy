@@ -107,7 +107,10 @@ async function main() {
     assert.ok(JSON.stringify(lobby.room.players).includes(n), 'joueur présent : ' + n);
   }
   await shot(host, '18-salon-en-ligne');
-  console.log('  ✓ salon ' + code + ' : 5 joueurs connectés');
+  // Bouton d'invitation : confirmation affichée (partage ou copie du lien).
+  await host.click('[data-action="ol_invite"]');
+  await host.waitForSelector('.ol-info');
+  console.log('  ✓ salon ' + code + ' : 5 joueurs connectés + bouton d’invitation');
 
   /* --- Distribution des rôles --------------------------------------- */
 
@@ -155,6 +158,19 @@ async function main() {
     const leaderUid = state.order[state.leader];
     const leaderPage = pageByUid(leaderUid);
 
+    if (round === 0) {
+      // Bouton 👁 : revoir SA carte de rôle à tout moment.
+      const p1 = pages[1];
+      await p1.click('[data-action="ol_peek"]');
+      await p1.waitForSelector('.peek-back .role-card.flipped');
+      const peekTxt = await p1.locator('.peek-back .role-front').innerText();
+      const expected = roleOf[uidOf['Ana']] === 'spy' ? 'SPY' : 'RÉSISTANT';
+      assert.ok(peekTxt.includes(expected), 'la carte revue montre le bon camp');
+      await p1.click('.peek-back');
+      assert.strictEqual(await p1.locator('.peek-back').count(), 0, 'carte recachée');
+      console.log('  ✓ bouton 👁 : chacun peut revoir son rôle en cours de partie');
+    }
+
     // Le chef compose : 1 espion + des résistants.
     const resUids = state.order.filter((u) => roleOf[u] === 'res');
     const team = [spies[0]].concat(resUids.filter((u) => u !== spies[0]).slice(0, sizes[round] - 1));
@@ -179,6 +195,8 @@ async function main() {
     for (const uid of team) {
       const p = pageByUid(uid);
       await p.waitForSelector('.mcard');
+      // Rappel du camp affiché sur l'écran de mission (téléphone personnel).
+      assert.strictEqual(await p.locator('.camp-line').count(), 1, 'rappel du camp affiché');
       if (roleOf[uid] === 'res') {
         assert.strictEqual(await p.locator('.mcard.fail').count(), 0, 'aucune carte Sabotage pour un résistant');
         assert.strictEqual(await p.locator('.mcard.success').count(), 2, 'deux cartes Succès pour un résistant');
@@ -223,6 +241,25 @@ async function main() {
   await pages[4].click('[data-action="ol_leave"]');
   await pages[4].waitForSelector('[data-action="ol_create"]');
   console.log('  ✓ rejouer dans le même salon + quitter le salon');
+
+  /* --- Lien d'invitation : ?join=CODE -------------------------------- */
+
+  const invited = await context.newPage();
+  await invited.goto(URL + '&join=' + code);
+  // Le lien ouvre directement le mode en ligne ; après l'inscription, le
+  // joueur atterrit dans le salon sans taper le code.
+  await invited.waitForSelector('[data-action="ol_toRegister"]');
+  await invited.click('[data-action="ol_toRegister"]');
+  await invited.fill('[data-ol-field="name"]', 'Fadi');
+  await invited.fill('[data-ol-field="email"]', 'fadi@spy.tn');
+  await invited.fill('[data-ol-field="pass"]', 'secretFadi');
+  await invited.click('[data-action="ol_register"]');
+  await invited.waitForSelector('.ol-code');
+  const inv = await dbg(invited);
+  assert.strictEqual(inv.code, code, 'le lien d’invitation mène au bon salon');
+  await invited.click('[data-action="ol_leave"]');
+  await invited.close();
+  console.log('  ✓ lien d’invitation : inscription puis salon rejoint automatiquement');
 
   /* --- Sans serveur : modale « bientôt » ------------------------------ */
 
