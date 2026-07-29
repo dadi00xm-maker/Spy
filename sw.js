@@ -1,5 +1,5 @@
 /* Service worker : mise en cache de l'application pour jouer hors ligne. */
-var CACHE = 'spy-v17';
+var CACHE = 'spy-v18';
 var ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,10 @@ var ASSETS = [
   './css/style.css',
   './js/rules.js',
   './js/i18n.js',
+  './js/firebase-config.js',
+  './js/net.js',
   './js/cast.js',
+  './js/online.js',
   './js/app.js',
   './manifest.webmanifest',
   './icons/icon.svg',

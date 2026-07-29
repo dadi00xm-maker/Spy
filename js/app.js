@@ -63,7 +63,8 @@
     },
     game: null,
     quitAsk: false,
-    castAsk: false
+    castAsk: false,
+    onlineAsk: false
   };
 
   var timer = { left: 0, running: false, handle: null, finished: false };
@@ -550,6 +551,7 @@
       case 'board': app.innerHTML = viewBoard(); break;
       case 'gameover': app.innerHTML = viewGameOver(); break;
       case 'rules': app.innerHTML = viewRules(); break;
+      case 'online': app.innerHTML = ONLINE.view(); break;
     }
     bindTutorial();
     updateTimerChip();
@@ -569,12 +571,29 @@
       '  <div class="stack">' +
       resume +
       '    <button class="btn btn-primary" data-action="toSetup">' + t('home.newGame') + '</button>' +
+      '    <button class="btn btn-ghost" data-action="onlineBtn">📱 ' + t('home.online') + '</button>' +
       '    <button class="btn btn-ghost" data-action="rules">' + t('home.rules') + '</button>' +
       '    <button class="btn btn-link" data-action="toggleLang">🌐 ' + t('home.lang') + '</button>' +
       '    <button class="btn btn-link" data-action="toggleTheme">' +
       t(state.theme === 'light' ? 'home.themeDark' : 'home.themeLight') + '</button>' +
       '  </div>' +
       '  <p class="unofficial">' + t('app.unofficial') + '</p>' +
+      onlineSoonModal() +
+      '</div>';
+  }
+
+  // Modale « le mode en ligne arrive » tant que le serveur n'est pas activé.
+  function onlineSoonModal() {
+    if (!state.onlineAsk) return '';
+    return '' +
+      '<div class="modal-back">' +
+      '  <div class="modal">' +
+      '    <p><b>📱 ' + t('ol.soonTitle') + '</b></p>' +
+      '    <p class="hint">' + t('ol.soonText') + '</p>' +
+      '    <div class="modal-btns">' +
+      '      <button class="btn btn-primary" data-action="onlineOk">' + t('cast.ok') + '</button>' +
+      '    </div>' +
+      '  </div>' +
       '</div>';
   }
 
@@ -1467,13 +1486,27 @@
       }
       state.castAsk = true;
     },
-    castOk: function () { state.castAsk = false; }
+    castOk: function () { state.castAsk = false; },
+
+    onlineBtn: function () {
+      if (!ONLINE.available()) { state.onlineAsk = true; return; }
+      state.screen = 'online';
+      ONLINE.open();
+    },
+    onlineOk: function () { state.onlineAsk = false; }
   };
 
   document.addEventListener('click', function (e) {
     var el = e.target.closest('[data-action]');
     if (!el || el.disabled) return;
-    var fn = actions[el.getAttribute('data-action')];
+    var name = el.getAttribute('data-action');
+    // Les actions du mode en ligne (préfixe ol_) sont gérées par ONLINE.
+    if (name.indexOf('ol_') === 0) {
+      var res = ONLINE.action(name, el);
+      if (res !== 'noRender') render();
+      return;
+    }
+    var fn = actions[name];
     if (!fn) return;
     var out = fn(el);
     if (out !== 'noRender') render();
@@ -1483,6 +1516,9 @@
     var el = e.target;
     if (el.matches && el.matches('[data-name-idx]')) {
       state.setup.names[parseInt(el.getAttribute('data-name-idx'), 10)] = el.value;
+    }
+    if (el.matches && el.matches('[data-ol-field]')) {
+      ONLINE.input(el.getAttribute('data-ol-field'), el.value);
     }
   });
 
@@ -1505,6 +1541,15 @@
       navigator.serviceWorker.register('sw.js').catch(function () { /* hors ligne indisponible */ });
     });
   }
+
+  // Utilitaires partagés avec le module du mode en ligne (online.js).
+  window.SPY_UI = {
+    t: t,
+    esc: esc,
+    icons: ICONS,
+    rerender: render,
+    goHome: function () { state.screen = 'home'; render(); }
+  };
 
   // Petit accès de debug pour les tests automatisés.
   window.RESISTANCE_DEBUG = {

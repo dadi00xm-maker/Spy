@@ -722,3 +722,28 @@ body {
 }
 .modal-btns { display: flex; gap: 10px; margin-top: 14px; }
 .modal-btns .btn { flex: 1; }
+
+/* --- Mode en ligne ------------------------------------------------- */
+
+.online .phase { width: 100%; }
+.online-menu .stack { width: 100%; max-width: 320px; margin: 0 auto; }
+.ol-h { text-align: center; margin: 4px 0 10px; }
+.ol-h.center { text-align: center; }
+.ol-code {
+  text-align: center;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: 0.45em;
+  padding: 14px 0 14px 0.45em; /* compense l'espacement de la dernière lettre */
+  margin: 8px auto 10px;
+  max-width: 320px;
+  border: 2px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.ol-join { display: flex; gap: 8px; }
+.ol-join .name-input { flex: 1; text-transform: uppercase; letter-spacing: 0.2em; }
+.ol-join .btn { flex-shrink: 0; }
+.ol-error { color: var(--red); text-align: center; font-weight: 600; margin: 6px 0; }
+.ol-info { color: var(--ok); text-align: center; font-weight: 600; margin: 6px 0; }
+.ol-votebtns { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; margin: 10px auto; }

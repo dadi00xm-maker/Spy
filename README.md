@@ -41,6 +41,14 @@ compte, aucune donnée collectée.
   le téléphone. La page `tv.html` peut aussi être ouverte sur un PC branché
   en HDMI (synchronisation locale entre onglets). Sur iPhone, la diffusion
   arrivera avec l'application native.
+- **Mode en ligne (bêta, en cours d'activation)** 📱 : chacun sur son
+  téléphone, où que vous soyez — compte joueur (e-mail + mot de passe),
+  salon avec code à 4 lettres, carte secrète sur chaque écran, votes et
+  missions joués simultanément. Le téléphone de l'hôte fait autorité et
+  les rôles ne sont jamais envoyés aux autres téléphones avant la fin de
+  la partie (documents privés par joueur). Synchronisation Firebase
+  (Auth + Firestore) chargée uniquement dans ce mode — le jeu à un
+  téléphone reste 100 % hors ligne et sans dépendance.
 - **Annonceur vocal** 🔊 : l'app annonce à voix haute à qui passer le
   téléphone, les résultats des votes et des missions, et le vainqueur
   (synthèse vocale du téléphone, FR/EN, bouton muet en cours de partie).
@@ -129,14 +137,19 @@ node tests/test-rules.js
 
 ```
 index.html            Point d'entrée
-css/style.css         Thème sombre mobile
+tv.html               Écran TV (plateau public)
+css/style.css         Thèmes sombre / clair
 js/rules.js           Règles (pur, testable)
 js/i18n.js            Textes FR / EN
-js/app.js             États + interface
+js/app.js             États + interface (jeu à un téléphone)
+js/online.js          Mode en ligne (comptes, salons, partie synchronisée)
+js/net.js             Couche réseau (Firebase ou local pour les tests)
+js/firebase-config.js Configuration du serveur (null = mode « bientôt »)
+js/cast.js            Diffusion TV (API Presentation)
 sw.js                 Hors ligne (service worker)
 manifest.webmanifest  Installation PWA
 icons/                Icônes de l'app
-tests/                Tests de la logique
+tests/                Tests (règles + bout en bout local et en ligne)
 .github/workflows/    Déploiement GitHub Pages
 ```
 
