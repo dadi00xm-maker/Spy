@@ -22,16 +22,17 @@ compte, aucune donnée collectée.
   rotation du chef d'équipe, piste des votes rejetés (5 rejets = victoire des
   espions), règle des « 2 échecs » pour la mission 4 à partir de 7 joueurs.
 - **Vote public** pour approuver ou rejeter chaque équipe.
-- **Missions secrètes** : chaque agent choisit Succès ou Sabotage sur le
-  téléphone, puis on retourne les cartes mélangées — impossible de savoir qui
-  a saboté.
-- **Anti-regards indiscrets** : pendant une mission, l'écran est strictement
-  identique pour tous les rôles (mêmes fonds de cartes, rien de désactivé —
-  seules les étiquettes sont colorées : Sabotage en rouge, Succès en bleu),
-  l'ordre des deux cartes est tiré au sort pour chaque joueur (la position du
-  doigt ne révèle rien), et un Agent qui touche Sabotage sélectionne
-  automatiquement Succès (règle du jeu). Les cartes de rôle utilisent
-  aussi un fond neutre illisible à distance.
+- **Missions secrètes** : comme avec de vraies cartes, chaque membre de
+  l'équipe joue sa carte en secret sur le téléphone, puis on retourne les
+  cartes mélangées — impossible de savoir qui a saboté. Un Résistant reçoit
+  **deux cartes Succès** (il ne peut pas saboter — et ne peut pas croire à
+  tort qu'il serait un espion) ; seul un Spy reçoit Succès **et** Sabotage.
+- **Anti-regards indiscrets** : fonds de cartes neutres illisibles à
+  distance (seules les étiquettes sont colorées : Sabotage en rouge, Succès
+  en bleu), rien n'est jamais désactivé, l'ordre des deux cartes du Spy est
+  tiré au sort pour chaque joueur (la position du doigt ne révèle rien), et
+  le rappel affiché sous les cartes est identique pour tous. Les cartes de
+  rôle utilisent aussi un fond neutre.
 - **Thème clair ou sombre** ☀️🌙 : bouton sur l'écran d'accueil, préférence
   mémorisée.
 - **Mode TV (bêta)** 📺 : depuis un téléphone Android (Chrome), le bouton 📺

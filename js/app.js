@@ -100,7 +100,8 @@
       missionIdx: 0,
       missionStage: 'pass', // pass | pick
       missionPick: null,
-      missionSwap: false, // ordre aléatoire des deux cartes (anti-observation)
+      missionPickIdx: null, // carte touchée (0 | 1) — pour le surlignage
+      missionSwap: false, // ordre aléatoire des deux cartes du spy (anti-observation)
       missionChoices: [],
       revealCards: [],
       assassinPick: null,
@@ -463,6 +464,7 @@
       g().missionIdx = 0;
       g().missionStage = 'pass';
       g().missionPick = null;
+      g().missionPickIdx = null;
       g().missionChoices = [];
     } else {
       g().leader = (g().leader + 1) % nPlayers();
@@ -476,6 +478,7 @@
   function recordMissionChoice(success) {
     g().missionChoices.push(!!success);
     g().missionPick = null;
+    g().missionPickIdx = null;
     if (g().missionChoices.length >= g().team.length) {
       // Toutes les cartes sont jouées : préparer la révélation mélangée.
       var cards = g().missionChoices.map(function (ok) { return ok ? 'S' : 'F'; });
@@ -954,36 +957,42 @@
         '</section>';
     }
 
-    // Stage « pick ». L'écran est STRICTEMENT identique quel que soit le
-    // rôle : mêmes cartes neutres pour tous, ordre mélangé par joueur, et
-    // aucun état désactivé — un Échec joué par un résistant sera simplement
-    // compté comme un Succès (règle officielle). Impossible de deviner le
-    // camp de quelqu'un en le regardant jouer.
-    var pick = game.missionPick; // null | true (succès) | false (échec)
+    // Stage « pick ». Comme avec de vraies cartes : un Résistant reçoit
+    // DEUX cartes Succès (il ne peut pas saboter — et voir une carte
+    // Sabotage ferait douter de son camp un joueur distrait) ; un Spy
+    // reçoit Succès + Sabotage dans un ordre tiré au sort pour lui, donc la
+    // position du doigt ne révèle rien. Fonds neutres identiques, aucune
+    // carte désactivée, et le rappel sous les cartes est le même pour tous.
+    var pick = game.missionPick;        // null | true (succès) | false (échec)
+    var pickIdx = game.missionPickIdx;  // null | 0 | 1 (carte touchée)
+    var hasPick = typeof pickIdx === 'number';
     var confirmBar = pick === null ? '' :
       '<div class="confirm-bar">' +
       '  <button class="btn btn-ghost" data-action="pickChange">' + t('mission.change') + '</button>' +
       '  <button class="btn btn-primary" data-action="pickConfirm">' + t('mission.confirm') + '</button>' +
       '</div>';
-    var successCard =
-      '<button class="mcard neutral success' + (pick === true ? ' picked' : '') + (pick === false ? ' dim' : '') + '"' +
-      '  data-action="pickSuccess">' +
-      '  <span class="mcard-icon">' + ICONS.fist + '</span>' + t('mission.success') + '</button>';
-    var failCard =
-      '<button class="mcard neutral fail' + (pick === false ? ' picked' : '') + (pick === true ? ' dim' : '') + '"' +
-      '  data-action="pickFail">' +
-      '  <span class="mcard-icon">' + ICONS.spy + '</span>' + t('mission.fail') + '</button>';
+    var cards = missionCardTypes(game, p.role).map(function (type, i) {
+      var sel = hasPick ? (pickIdx === i ? ' picked' : ' dim') : '';
+      return '<button class="mcard neutral ' + type + sel + '"' +
+        ' data-action="pickCard" data-idx="' + i + '">' +
+        '<span class="mcard-icon">' + (type === 'success' ? ICONS.fist : ICONS.spy) + '</span>' +
+        t(type === 'success' ? 'mission.success' : 'mission.fail') + '</button>';
+    }).join('');
     return '' +
       '<section class="phase center-phase">' +
       '  <p class="progress">' + pos + ' — ' + esc(p.name) + '</p>' +
       '  <h3>' + t('mission.pick') + '</h3>' +
       '  <p class="hint center">' + t('mission.pickHint') + '</p>' +
-      '  <div class="mission-cards">' +
-      (game.missionSwap ? failCard + successCard : successCard + failCard) +
-      '  </div>' +
+      '  <div class="mission-cards">' + cards + '</div>' +
       '  <p class="hint center">' + t('mission.rule') + '</p>' +
       confirmBar +
       '</section>';
+  }
+
+  // Les deux cartes présentées au joueur selon son camp.
+  function missionCardTypes(game, role) {
+    if (role === 'res') return ['success', 'success'];
+    return game.missionSwap ? ['fail', 'success'] : ['success', 'fail'];
   }
 
   function viewMissionReveal() {
@@ -1360,19 +1369,22 @@
     missionImHere: function () {
       g().missionStage = 'pick';
       g().missionPick = null;
-      // Ordre des deux cartes tiré au sort pour ce joueur : la position du
-      // doigt ne révèle rien à ceux qui regardent.
+      g().missionPickIdx = null;
+      // Ordre des deux cartes du spy tiré au sort pour ce joueur : la
+      // position du doigt ne révèle rien à ceux qui regardent.
       g().missionSwap = Math.random() < 0.5;
       save();
     },
-    pickSuccess: function () { g().missionPick = true; },
-    pickFail: function () {
-      var member = g().players[g().team[g().missionIdx]];
-      // Un résistant ne peut pas saboter : son geste sélectionne la carte
-      // Succès (même geste pour tous — la règle est affichée sous les cartes).
-      g().missionPick = member.role === 'res' ? true : false;
+    pickCard: function (el) {
+      var game = g();
+      var i = parseInt(el.getAttribute('data-idx'), 10);
+      var member = game.players[game.team[game.missionIdx]];
+      var type = missionCardTypes(game, member.role)[i];
+      if (!type) return 'noRender';
+      game.missionPick = type === 'success';
+      game.missionPickIdx = i;
     },
-    pickChange: function () { g().missionPick = null; },
+    pickChange: function () { g().missionPick = null; g().missionPickIdx = null; },
     pickConfirm: function () {
       var game = g();
       if (game.missionPick === null) return;

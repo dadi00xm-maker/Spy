@@ -107,18 +107,27 @@ async function main() {
     await click('[data-action="afterVote"]');
   }
 
-  // Joue la mission : les espions sabotent si `spiesFail` ; si
-  // `resTapFail`, les résistants TOUCHENT aussi Échec (qui doit être
-  // compté comme Succès par la règle officielle).
-  async function runMission(spiesFail, resTapFail) {
+  // Joue la mission : les espions sabotent si `spiesFail`. Un résistant ne
+  // voit JAMAIS de carte Sabotage : il a deux cartes Succès (vérifié à
+  // chaque passage) ; si `resSecondCard`, il touche la seconde.
+  async function runMission(spiesFail, resSecondCard) {
     let st = await state();
     const teamLen = st.game.team.length;
     for (let k = 0; k < teamLen; k++) {
       st = await state();
       const member = st.game.players[st.game.team[st.game.missionIdx]];
       await click('[data-action="missionImHere"]');
-      const tapFail = member.role === 'spy' ? spiesFail : !!resTapFail;
-      await click(tapFail ? '[data-action="pickFail"]' : '[data-action="pickSuccess"]');
+      if (member.role === 'spy') {
+        assert.strictEqual(await page.locator('.mcard.success').count(), 1, 'une carte Succès pour le spy');
+        assert.strictEqual(await page.locator('.mcard.fail').count(), 1, 'une carte Sabotage pour le spy');
+        await page.locator(spiesFail ? '.mcard.fail' : '.mcard.success').first().click();
+      } else {
+        assert.strictEqual(await page.locator('.mcard.fail').count(), 0, 'aucune carte Sabotage pour un résistant');
+        assert.strictEqual(await page.locator('.mcard.success').count(), 2, 'deux cartes Succès pour un résistant');
+        await page.locator('.mcard.success').nth(resSecondCard ? 1 : 0).click();
+        const picked = await state();
+        assert.strictEqual(picked.game.missionPick, true, 'toute carte d’un résistant est un Succès');
+      }
       await click('[data-action="pickConfirm"]');
     }
     // Révélation des cartes.
@@ -217,22 +226,30 @@ async function main() {
     if (round === 0) await shot('05-vote');
     await voteAll('up', true);
     if (round === 0) {
-      // Membre 1 : l'espion sabote (avec test du bouton « changer »).
+      // Membre 1 : l'espion voit Succès + Sabotage et sabote (avec test
+      // du bouton « changer »).
       await click('[data-action="missionImHere"]');
       await shot('06-mission-choix');
-      // Écran identique pour tous : aucune carte ne doit être désactivée.
       assert.strictEqual(await page.locator('.mcard[disabled]').count(), 0, 'aucune carte désactivée');
-      await click('[data-action="pickSuccess"]');
+      assert.strictEqual(await page.locator('.mcard.success').count(), 1, 'une carte Succès pour le spy');
+      assert.strictEqual(await page.locator('.mcard.fail').count(), 1, 'une carte Sabotage pour le spy');
+      await page.locator('.mcard.success').first().click();
       await click('[data-action="pickChange"]');
-      await click('[data-action="pickFail"]');
+      await page.locator('.mcard.fail').first().click();
+      let s1 = await state();
+      assert.strictEqual(s1.game.missionPick, false, 'le spy a bien sélectionné Sabotage');
       await click('[data-action="pickConfirm"]');
-      // Membre 2 : le résistant TOUCHE Échec — c'est la carte Succès qui
-      // doit se sélectionner (il ne peut pas saboter).
+      // Membre 2 : le résistant reçoit DEUX cartes Succès — aucune carte
+      // Sabotage sur son écran (il ne peut pas saboter, et il ne peut pas
+      // croire à tort qu'il serait un spy).
       await click('[data-action="missionImHere"]');
-      await click('[data-action="pickFail"]');
+      assert.strictEqual(await page.locator('.mcard.fail').count(), 0, 'aucune carte Sabotage pour un résistant');
+      assert.strictEqual(await page.locator('.mcard.success').count(), 2, 'deux cartes Succès pour un résistant');
+      await shot('06b-mission-resistant');
+      await page.locator('.mcard.success').nth(1).click();
       let s2 = await state();
       assert.strictEqual(s2.game.missionPick, true,
-        'le geste Échec d’un résistant sélectionne Succès');
+        'la seconde carte d’un résistant est aussi un Succès');
       await click('[data-action="pickConfirm"]');
       let s3 = await state();
       assert.deepStrictEqual(s3.game.missionChoices, [false, true],
@@ -241,7 +258,7 @@ async function main() {
       while (s3.game.phase === 'mission') {
         const m = s3.game.players[s3.game.team[s3.game.missionIdx]];
         await click('[data-action="missionImHere"]');
-        await click(m.role === 'spy' ? '[data-action="pickFail"]' : '[data-action="pickSuccess"]');
+        await page.locator(m.role === 'spy' ? '.mcard.fail' : '.mcard.success').first().click();
         await click('[data-action="pickConfirm"]');
         s3 = await state();
       }
@@ -304,13 +321,13 @@ async function main() {
   for (let round = 0; round < 3; round++) {
     await pickTeam(resOnly.slice(0, [2, 3, 2][round]));
     await voteAll('up', true);
-    // Équipe 100 % résistante qui TOUCHE Échec : la règle officielle doit
-    // compter chaque carte comme un Succès.
+    // Équipe 100 % résistante : chacun n'a que des cartes Succès (ici tous
+    // touchent la seconde) — la mission réussit forcément.
     await runMission(true, true);
     await click('[data-action="missionDone"]');
     st = await state();
     assert.strictEqual(st.game.missions[round].result, 'success',
-      'mission réussie malgré des gestes Échec résistants');
+      'mission réussie — les résistants n’ont que des cartes Succès');
   }
   st = await state();
   assert.strictEqual(st.screen, 'gameover');
