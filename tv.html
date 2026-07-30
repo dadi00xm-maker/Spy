@@ -190,6 +190,10 @@
       if (msg && msg.type === 'state' && msg.state) {
         current = msg.state;
         lang = current.lang || 'fr';
+        // Le tounsi s'écrit en arabe : la TV passe en droite à gauche.
+        var html = document.documentElement;
+        html.setAttribute('lang', lang === 'tn' ? 'ar-TN' : lang);
+        html.setAttribute('dir', lang === 'tn' ? 'rtl' : 'ltr');
         render();
       }
     }

@@ -8,6 +8,7 @@
 
   var STORAGE_KEY = 'resistance.save.v1';
   var LANG_KEY = 'resistance.lang';
+  var LANGS = ['fr', 'en', 'tn']; // le bouton 🌐 tourne dans cet ordre
 
   var app = document.getElementById('app');
 
@@ -204,6 +205,19 @@
     if (meta) meta.setAttribute('content', state.theme === 'light' ? '#f2f5fb' : '#0b0f1c');
   }
 
+  // Sens de défilement horizontal : inversé en écriture arabe.
+  function rtlSign() {
+    return state.lang === 'tn' ? -1 : 1;
+  }
+
+  // Langue de la page : le tounsi s'écrit en arabe, donc de droite à gauche.
+  function applyLang() {
+    var html = document.documentElement;
+    html.setAttribute('lang', state.lang === 'tn' ? 'ar-TN' : state.lang);
+    html.setAttribute('dir', state.lang === 'tn' ? 'rtl' : 'ltr');
+    document.body.classList.toggle('lang-tn', state.lang === 'tn');
+  }
+
   function esc(s) {
     return String(s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -246,22 +260,68 @@
     return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
   }
 
+  /* Voix enregistrées (par langue puis par clé de texte) : quand un fichier
+     existe, il remplace la synthèse vocale du téléphone. Il suffit d'ajouter
+     le nom du fichier ici et de le déposer dans audio/<langue>/.
+     Exemple : tn: { 'mission.successResult': 'mission-nejhet.mp3' } */
+  var VOICE_CLIPS = {
+    tn: {}
+  };
+  var audioEl = null;
+
+  function clipFor(key) {
+    if (!key) return null;
+    var byLang = VOICE_CLIPS[state.lang];
+    var file = byLang && byLang[key];
+    return file ? 'audio/' + state.lang + '/' + file : null;
+  }
+
+  // Joue un enregistrement ; renvoie false si ce n'est pas possible (on
+  // retombe alors sur la synthèse vocale).
+  function playClip(src, finish) {
+    try {
+      if (!audioEl) audioEl = new Audio();
+      audioEl.pause();
+      audioEl.src = src;
+      audioEl.onended = finish;
+      audioEl.onerror = finish;
+      var p = audioEl.play();
+      if (p && p.catch) p.catch(finish);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Parle si l'annonceur est activé pour la partie en cours. `onend` est
   // toujours appelé (aussi en cas d'échec ou de synthèse indisponible),
-  // avec un garde-fou temporel pour ne jamais bloquer le jeu.
-  function speak(text, onend) {
-    var enabled = voiceSupported() && g() && g().voice;
+  // avec un garde-fou temporel pour ne jamais bloquer le jeu. `key` permet
+  // d'utiliser une voix enregistrée quand elle existe.
+  function speak(text, onend, key) {
+    var enabled = g() && g().voice && (voiceSupported() || clipFor(key));
     if (!enabled) { if (onend) onend(); return; }
     var done = false;
     var finish = function () { if (!done) { done = true; if (onend) onend(); } };
+    var clip = clipFor(key);
+    if (clip && playClip(clip, finish)) {
+      setTimeout(finish, Math.max(4000, text.length * 120));
+      return;
+    }
+    if (!voiceSupported()) { finish(); return; }
     try {
       var u = new SpeechSynthesisUtterance(text);
-      u.lang = state.lang === 'fr' ? 'fr-FR' : 'en-US';
+      // Le tounsi est lu par une voix arabe (ar-TN si le téléphone l'a,
+      // sinon n'importe quelle voix arabe).
+      var tags = { fr: ['fr-FR', 'fr'], en: ['en-US', 'en'], tn: ['ar-TN', 'ar'] };
+      var want = tags[state.lang] || tags.fr;
+      u.lang = want[0];
       var voices = window.speechSynthesis.getVoices() || [];
-      for (var i = 0; i < voices.length; i++) {
-        if (voices[i].lang && voices[i].lang.indexOf(state.lang) === 0) {
-          u.voice = voices[i];
-          break;
+      for (var w = 0; w < want.length && !u.voice; w++) {
+        for (var i = 0; i < voices.length; i++) {
+          if (voices[i].lang && voices[i].lang.replace('_', '-').indexOf(want[w]) === 0) {
+            u.voice = voices[i];
+            break;
+          }
         }
       }
       u.rate = 0.95;
@@ -312,17 +372,20 @@
   var cer = { running: false, idx: 0, timer: null };
 
   function ceremonySteps() {
-    var s = [{ text: t('cer.close'), wait: 3000, tick: true }];
+    function step(key, wait, tick) {
+      return { key: key, text: t(key), wait: wait, tick: tick };
+    }
+    var s = [step('cer.close', 3000, true)];
     if (g().knownSpies && spyNames().length > 1) {
-      s.push({ text: t('cer.spiesOpen'), wait: 5000, tick: true });
-      s.push({ text: t('cer.spiesClose'), wait: 2000, tick: true });
+      s.push(step('cer.spiesOpen', 5000, true));
+      s.push(step('cer.spiesClose', 2000, true));
     }
     if (g().commanderMode) {
-      s.push({ text: t('cer.thumbs'), wait: 3000, tick: true });
-      s.push({ text: t('cer.cmdOpen'), wait: 4000, tick: true });
-      s.push({ text: t('cer.cmdClose'), wait: 3000, tick: true });
+      s.push(step('cer.thumbs', 3000, true));
+      s.push(step('cer.cmdOpen', 4000, true));
+      s.push(step('cer.cmdClose', 3000, true));
     }
-    s.push({ text: t('cer.openAll'), wait: 600, tick: false });
+    s.push(step('cer.openAll', 600, false));
     return s;
   }
 
@@ -353,7 +416,7 @@
         tickStop();
         cerRun(i + 1);
       }, st.wait);
-    });
+    }, st.key);
   }
 
   /* ------------------------------------------------------------------ */
@@ -383,7 +446,7 @@
           timer.finished = true;
           beep();
           vibrate([200, 100, 200]);
-          speak(t('timer.done'));
+          speak(t('timer.done'), null, 'timer.done');
         }
         updateTimerChip();
       }, 1000);
@@ -490,7 +553,7 @@
     } else {
       g().missionIdx++;
       g().missionStage = 'pass';
-      speak(t('mission.pass') + ' ' + g().players[g().team[g().missionIdx]].name);
+      speak(t('mission.pass') + ' ' + g().players[g().team[g().missionIdx]].name, null, 'mission.pass');
     }
     save();
   }
@@ -532,7 +595,7 @@
       timerResetTo(g().timerMin);
       // Annonce de la finale décisive (égalité parfaite avant la dernière).
       if (RULES.isDecisive(g().missions, g().round, nPlayers())) {
-        speak(t('decisive.hint'));
+        speak(t('decisive.hint'), null, 'decisive.hint');
       }
     }
     save();
@@ -1172,7 +1235,9 @@
     var pager = document.getElementById('tut-pager');
     if (!pager) return;
     pager.addEventListener('scroll', function () {
-      var idx = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
+      // En arabe (droite à gauche), scrollLeft devient négatif : on prend
+      // la valeur absolue pour retrouver le numéro de page.
+      var idx = Math.round(Math.abs(pager.scrollLeft) / Math.max(1, pager.clientWidth));
       var dots = document.querySelectorAll('.tut-dot');
       for (var i = 0; i < dots.length; i++) {
         dots[i].classList.toggle('on', i === idx);
@@ -1228,8 +1293,10 @@
 
   var actions = {
     toggleLang: function () {
-      state.lang = state.lang === 'fr' ? 'en' : 'fr';
+      var i = LANGS.indexOf(state.lang);
+      state.lang = LANGS[(i + 1) % LANGS.length];
       localStorage.setItem(LANG_KEY, state.lang);
+      applyLang();
     },
     toggleTheme: function () {
       state.theme = state.theme === 'light' ? 'dark' : 'light';
@@ -1241,12 +1308,12 @@
     rulesBack: function () { state.screen = state.rulesReturn || 'home'; },
     tutPrev: function () {
       var p = document.getElementById('tut-pager');
-      if (p) p.scrollBy({ left: -p.clientWidth, behavior: 'smooth' });
+      if (p) p.scrollBy({ left: -p.clientWidth * rtlSign(), behavior: 'smooth' });
       return 'noRender';
     },
     tutNext: function () {
       var p = document.getElementById('tut-pager');
-      if (p) p.scrollBy({ left: p.clientWidth, behavior: 'smooth' });
+      if (p) p.scrollBy({ left: p.clientWidth * rtlSign(), behavior: 'smooth' });
       return 'noRender';
     },
     toSetup: function () {
@@ -1291,7 +1358,7 @@
       });
       state.screen = 'reveal';
       save();
-      speak(t('reveal.pass') + ' ' + state.game.players[0].name);
+      speak(t('reveal.pass') + ' ' + state.game.players[0].name, null, 'reveal.pass');
     },
 
     revealImHere: function () {
@@ -1330,7 +1397,7 @@
         game.revealSeen = false;
         game.revealFlipped = false;
         save();
-        speak(t('reveal.pass') + ' ' + game.players[game.revealIdx].name);
+        speak(t('reveal.pass') + ' ' + game.players[game.revealIdx].name, null, 'reveal.pass');
       }
     },
 
@@ -1376,14 +1443,16 @@
       if (!g().votes.every(function (v) { return v !== null; })) return;
       resolveVote();
       vibrate(g().lastVote.approved ? 40 : [60, 60, 60]);
-      speak(t(g().lastVote.approved ? 'vote.approved' : 'vote.rejected'));
+      var vk = g().lastVote.approved ? 'vote.approved' : 'vote.rejected';
+      speak(t(vk), null, vk);
     },
     afterVote: function () {
       afterVoteResult();
       if (state.screen === 'gameover') {
-        speak(t(g().winner === 'res' ? 'over.resWin' : 'over.spyWin'));
+        var wk = g().winner === 'res' ? 'over.resWin' : 'over.spyWin';
+        speak(t(wk), null, wk);
       } else if (g().phase === 'mission') {
-        speak(t('mission.pass') + ' ' + g().players[g().team[0]].name);
+        speak(t('mission.pass') + ' ' + g().players[g().team[0]].name, null, 'mission.pass');
       }
     },
 
@@ -1422,15 +1491,17 @@
       save();
       if (g().revealCards.every(function (c) { return c.flipped; })) {
         var out = missionOutcome();
-        speak(t(out.result === 'success' ? 'mission.successResult' : 'mission.failResult'));
+        var mk = out.result === 'success' ? 'mission.successResult' : 'mission.failResult';
+        speak(t(mk), null, mk);
       }
     },
     missionDone: function () {
       finishMission();
       if (state.screen === 'gameover') {
-        speak(t(g().winner === 'res' ? 'over.resWin' : 'over.spyWin'));
+        var wk = g().winner === 'res' ? 'over.resWin' : 'over.spyWin';
+        speak(t(wk), null, wk);
       } else if (g().phase === 'assassin') {
-        speak(t('assassin.title'));
+        speak(t('assassin.title'), null, 'assassin.title');
       }
     },
 
@@ -1449,7 +1520,8 @@
       state.screen = 'gameover';
       vibrate(wasCommander ? [80, 60, 80] : 40);
       save();
-      speak(t(wasCommander ? 'over.spyWin' : 'over.resWin'));
+      var ak = wasCommander ? 'over.spyWin' : 'over.resWin';
+      speak(t(ak), null, ak);
     },
 
     replaySame: function () {
@@ -1462,7 +1534,7 @@
       });
       state.screen = 'reveal';
       save();
-      speak(t('reveal.pass') + ' ' + state.game.players[0].name);
+      speak(t('reveal.pass') + ' ' + state.game.players[0].name, null, 'reveal.pass');
     },
 
     askQuit: function () { state.quitAsk = true; },
@@ -1533,7 +1605,8 @@
   /* Démarrage                                                           */
   /* ------------------------------------------------------------------ */
 
-  document.documentElement.setAttribute('lang', state.lang);
+  if (LANGS.indexOf(state.lang) === -1) state.lang = 'fr';
+  applyLang();
   applyTheme();
   render();
 

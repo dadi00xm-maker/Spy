@@ -61,7 +61,13 @@ compte, aucune donnée collectée.
   (espions à l'aveugle, mode Commandant).
 - **Options** : variante « espions à l'aveugle », mode Commandant, annonceur
   vocal, minuteur de discussion (3 / 5 / 10 min).
-- **Bilingue** : français 🇫🇷 (par défaut) et anglais 🇬🇧.
+- **Trois langues** : français 🇫🇷 (par défaut), anglais 🇬🇧 et **arabe
+  tunisien** 🇹🇳 (derja en écriture arabe, interface lue de droite à gauche,
+  annonceur vocal en voix arabe). Le bouton 🌐 tourne entre les trois.
+- **Voix enregistrées (optionnel)** : une annonce peut être remplacée par un
+  enregistrement humain déposé dans `audio/<langue>/` (voir
+  `audio/README.md`) ; à défaut, la synthèse vocale du téléphone prend le
+  relais.
 - **Reprise de partie** : la partie en cours est sauvegardée sur le téléphone.
 
 ## 📸 Aperçu

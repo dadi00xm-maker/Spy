@@ -241,7 +241,7 @@ body {
   border-top: 1px solid var(--line);
   color: var(--text);
   padding: 12px 2px;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .opt-row:first-of-type { border-top: none; }
@@ -402,7 +402,7 @@ body {
   border-radius: 999px;
   padding: 8px 14px;
 }
-.vtrack-label { color: var(--muted); font-size: 0.78rem; margin-right: auto; }
+.vtrack-label { color: var(--muted); font-size: 0.78rem; margin-inline-end: auto; }
 .pip { width: 12px; height: 12px; border-radius: 50%; background: var(--bg2); border: 1.5px solid var(--line); }
 .pip.on { background: var(--red); border-color: var(--red); }
 
@@ -426,7 +426,7 @@ body {
 .pchip.sel { border-color: var(--blue); background: var(--blue-bg); }
 .pchip.sel.danger { border-color: var(--red); background: var(--red-bg); }
 .pchip.sel.danger .check { color: var(--red); }
-.pchip .check { margin-left: auto; color: var(--blue); font-weight: 800; }
+.pchip .check { margin-inline-start: auto; color: var(--blue); font-weight: 800; }
 .pchip .star, .vote-name { font-weight: 600; }
 .star { color: var(--gold); }
 
@@ -546,7 +546,7 @@ body {
   padding: 7px 8px 7px 14px;
 }
 .timer-label { color: var(--muted); font-size: 0.82rem; }
-.timer-left { font-variant-numeric: tabular-nums; font-weight: 800; margin-right: auto; }
+.timer-left { font-variant-numeric: tabular-nums; font-weight: 800; margin-inline-end: auto; }
 .timer-chip.timer-done { border-color: var(--gold); }
 .timer-chip.timer-done .timer-left { color: var(--gold); }
 
@@ -572,11 +572,11 @@ body {
   padding: 9px 12px;
   border-radius: 10px;
   background: var(--bg2);
-  border-left: 4px solid var(--line);
+  border-inline-start: 4px solid var(--line);
 }
-.role-row.res { border-left-color: var(--blue); }
-.role-row.spy { border-left-color: var(--red); }
-.role-row.commander { border-left-color: var(--purple); }
+.role-row.res { border-inline-start-color: var(--blue); }
+.role-row.spy { border-inline-start-color: var(--red); }
+.role-row.commander { border-inline-start-color: var(--purple); }
 
 /* --- Règles ------------------------------------------------------- */
 
@@ -750,3 +750,16 @@ body {
 .camp-line { text-align: center; font-weight: 700; margin: 2px 0 6px; }
 .peek-back { flex-direction: column; gap: 12px; }
 .peek-back .role-card-wrap { flex: 0; }
+
+/* --- Arabe tunisien (droite à gauche) ------------------------------ */
+
+/* Chiffres et codes restent lus de gauche à droite au milieu du texte. */
+.lang-tn .ol-code,
+.lang-tn .counter-value,
+.lang-tn .timer-left,
+.lang-tn .big-count { direction: ltr; }
+/* L'interrupteur des options garde son sens de lecture. */
+.lang-tn .switch { direction: ltr; }
+/* Un peu plus d'air : l'arabe a des signes au-dessus et en dessous. */
+.lang-tn .role-title { letter-spacing: 0; }
+.lang-tn .role-hint, .lang-tn .hint, .lang-tn .tut-text { line-height: 1.65; }

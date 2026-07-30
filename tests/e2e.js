@@ -143,14 +143,42 @@ async function main() {
   await page.waitForSelector('[data-action="toSetup"]');
   await shot('01-accueil');
 
-  // Le titre est « SPY » dans les deux langues ; la bascule FR/EN se vérifie
-  // sur un libellé traduit.
+  // Le titre est « SPY » dans les trois langues ; le bouton 🌐 tourne
+  // français → anglais → tounsi → français.
   assert.ok((await page.locator('.title').innerText()).includes('SPY'), 'titre Spy');
+  const dir = () => page.evaluate(() => document.documentElement.getAttribute('dir'));
+  assert.strictEqual(await dir(), 'ltr', 'français lu de gauche à droite');
   await click('[data-action="toggleLang"]');
   assert.ok((await page.locator('[data-action="rules"]').innerText()).includes('How to play'), 'interface anglaise');
+
+  // Tounsi : écriture arabe et lecture de droite à gauche.
+  await click('[data-action="toggleLang"]');
+  const tnRules = await page.locator('[data-action="rules"]').innerText();
+  assert.ok(tnRules.includes('قوانين اللعبة'), 'interface en arabe tunisien');
+  assert.strictEqual(await dir(), 'rtl', 'tounsi lu de droite à gauche');
+  assert.strictEqual(
+    await page.evaluate(() => document.documentElement.getAttribute('lang')), 'ar-TN',
+    'langue de la page annoncée en ar-TN');
+  assert.ok(await page.evaluate(() => document.body.classList.contains('lang-tn')), 'classe lang-tn');
+  await shot('22-accueil-tounsi');
+
+  // Une partie complète est jouable en tounsi (jusqu'au plateau).
+  await click('[data-action="toSetup"]');
+  assert.ok((await page.locator('.screen').innerText()).includes('قدّاش من لاعب'), 'écran de création en tounsi');
+  await shot('23-creation-tounsi');
+  await click('[data-action="startGame"]');
+  await revealAll(false);
+  let tnState = await state();
+  assert.strictEqual(tnState.screen, 'board', 'plateau atteint en tounsi');
+  assert.ok((await page.locator('.screen').innerText()).includes('فريق'), 'plateau en tounsi');
+  await shot('24-plateau-tounsi');
+  await click('[data-action="askQuit"]');
+  await click('[data-action="quitYes"]');
+
   await click('[data-action="toggleLang"]');
   assert.ok((await page.locator('[data-action="rules"]').innerText()).includes('Règles du jeu'), 'interface française');
-  console.log('  ✓ bascule FR/EN');
+  assert.strictEqual(await dir(), 'ltr', 'retour à la lecture gauche-droite');
+  console.log('  ✓ trois langues : français, anglais, tounsi (droite à gauche)');
 
   // Bascule de thème clair/sombre.
   await click('[data-action="toggleTheme"]');
