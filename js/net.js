@@ -396,7 +396,9 @@ var SPYNET = (function () {
   /* ------------------------------------------------------------------ */
 
   var backend = null;
-  if (params.has('localnet') && 'BroadcastChannel' in window) {
+  if (params.has('nonet')) {
+    backend = null; // force le mode « serveur non configuré » (tests)
+  } else if (params.has('localnet') && 'BroadcastChannel' in window) {
     backend = LocalBackend();
   } else if (typeof SPY_FIREBASE_CONFIG !== 'undefined' && SPY_FIREBASE_CONFIG) {
     backend = FirebaseBackend(SPY_FIREBASE_CONFIG);

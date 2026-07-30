@@ -1,0 +1,53 @@
+rules_version = '2';
+
+/*
+ * Règles de sécurité des salons Spy.
+ *
+ * Principes :
+ *  - il faut être connecté (compte e-mail + mot de passe) pour tout ;
+ *  - l'état PUBLIC d'un salon est lisible par les joueurs connectés ;
+ *  - seul l'HÔTE écrit l'état de la partie (il fait autorité) ;
+ *  - les rôles vivent dans rooms/{code}/private/{uid} : chacun ne peut lire
+ *    QUE son propre document — impossible d'aller voir le rôle d'un autre ;
+ *  - un joueur ne peut envoyer que des actions signées de son propre compte.
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /rooms/{code} {
+      function hostUid() {
+        return get(/databases/$(database)/documents/rooms/$(code)).data.host;
+      }
+      function isHost() {
+        return request.auth != null && hostUid() == request.auth.uid;
+      }
+
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.host == request.auth.uid;
+      allow update, delete: if request.auth != null
+                            && resource.data.host == request.auth.uid;
+
+      // Liste des joueurs : chacun s'inscrit et se retire lui-même ;
+      // l'hôte peut aussi retirer quelqu'un.
+      match /players/{uid} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null
+                     && (request.auth.uid == uid || isHost());
+      }
+
+      // Rôles secrets : lecture réservée au propriétaire, écriture à l'hôte.
+      match /private/{uid} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if isHost();
+      }
+
+      // Actions des joueurs : chacun crée les siennes, l'hôte les traite.
+      match /actions/{id} {
+        allow create: if request.auth != null
+                      && request.resource.data.uid == request.auth.uid;
+        allow read, delete: if isHost();
+      }
+    }
+  }
+}

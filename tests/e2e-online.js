@@ -261,10 +261,10 @@ async function main() {
   await invited.close();
   console.log('  ✓ lien d’invitation : inscription puis salon rejoint automatiquement');
 
-  /* --- Sans serveur : modale « bientôt » ------------------------------ */
+  /* --- Sans serveur (?nonet) : modale « bientôt » --------------------- */
 
   const plain = await context.newPage();
-  await plain.goto(BASE_URL + '/?nocast=1');
+  await plain.goto(BASE_URL + '/?nocast=1&nonet=1');
   await plain.waitForSelector('[data-action="toSetup"]');
   await plain.click('[data-action="onlineBtn"]');
   await plain.waitForSelector('.modal');
