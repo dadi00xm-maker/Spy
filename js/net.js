@@ -146,6 +146,14 @@ var SPYNET = (function () {
         authCbs.forEach(function (cb) { cb(user); });
         return Promise.resolve(user);
       },
+      // Connexion Google simulée : chaque appel « choisit » un compte Google
+      // différent, comme le sélecteur de comptes du vrai bouton.
+      signInGoogle: function () {
+        var uid = 'g' + Math.random().toString(36).slice(2, 10);
+        user = { uid: uid, name: 'Google ' + uid.slice(1, 4), email: uid + '@gmail.test' };
+        authCbs.forEach(function (cb) { cb(user); });
+        return Promise.resolve(user);
+      },
       signOut: function () {
         user = null;
         authCbs.forEach(function (cb) { cb(null); });
@@ -276,6 +284,9 @@ var SPYNET = (function () {
         var app = window.firebase.initializeApp(config);
         auth = window.firebase.auth(app);
         db = window.firebase.firestore(app);
+        // Retour d'une connexion Google par redirection (quand la fenêtre
+        // surgissante est bloquée) : le résultat arrive au chargement.
+        auth.getRedirectResult().catch(function () { /* pas de redirection */ });
         // On attend la restauration de la session (premier signal d'état)
         // pour que « reprendre la partie » sache si le joueur est connecté.
         return new Promise(function (resolve) {
@@ -320,6 +331,31 @@ var SPYNET = (function () {
         return auth.signInWithEmailAndPassword(email.trim(), pass).then(function (cred) {
           user = { uid: cred.user.uid, name: cred.user.displayName || email.split('@')[0], email: cred.user.email };
           return user;
+        });
+      },
+
+      // Connexion en un geste avec un compte Google. Fenêtre surgissante
+      // d'abord (recommandé sur Safari/iPhone) ; si le navigateur la bloque,
+      // on bascule sur une redirection, dont le retour est traité au
+      // chargement par getRedirectResult().
+      signInGoogle: function () {
+        var p = new window.firebase.auth.GoogleAuthProvider();
+        p.setCustomParameters({ prompt: 'select_account' });
+        return auth.signInWithPopup(p).then(function (cred) {
+          user = {
+            uid: cred.user.uid,
+            name: cred.user.displayName || (cred.user.email || '').split('@')[0],
+            email: cred.user.email
+          };
+          return user;
+        }, function (err) {
+          var c = (err && err.code) || '';
+          if (c.indexOf('popup-blocked') !== -1 ||
+              c.indexOf('operation-not-supported-in-this-environment') !== -1) {
+            // La redirection quitte la page : rien à renvoyer ici.
+            return auth.signInWithRedirect(p).then(function () { return null; });
+          }
+          throw err;
         });
       },
       signOut: function () { return auth.signOut(); },

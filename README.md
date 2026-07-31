@@ -44,7 +44,8 @@ compte, aucune donnée collectée.
 - **Mode en ligne (bêta, en cours d'activation)** 📱 : chacun sur son
   téléphone, où que vous soyez — compte joueur (e-mail + mot de passe),
   salon avec code à 4 lettres, carte secrète sur chaque écran, votes et
-  missions joués simultanément. Le téléphone de l'hôte fait autorité et
+  missions joués simultanément. Deux façons de se connecter : compte
+  e-mail + mot de passe, ou **connexion Google en un geste**. Le téléphone de l'hôte fait autorité et
   les rôles ne sont jamais envoyés aux autres téléphones avant la fin de
   la partie (documents privés par joueur). Invitation des amis par lien de
   partage (`?join=CODE`), rappel de son rôle 👁 à tout moment, rappel du

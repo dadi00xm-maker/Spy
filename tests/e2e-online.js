@@ -261,6 +261,33 @@ async function main() {
   await invited.close();
   console.log('  ✓ lien d’invitation : inscription puis salon rejoint automatiquement');
 
+  /* --- Connexion Google en un geste ----------------------------------- */
+
+  const gPage = await context.newPage();
+  await gPage.goto(URL);
+  await gPage.waitForSelector('[data-action="toSetup"]');
+  await gPage.click('[data-action="onlineBtn"]');
+  // Le bouton Google est proposé sur les trois écrans d'accès.
+  await gPage.waitForSelector('[data-action="ol_google"]');
+  await gPage.click('[data-action="ol_toRegister"]');
+  assert.strictEqual(await gPage.locator('[data-action="ol_google"]').count(), 1,
+    'bouton Google sur l’écran d’inscription');
+  await gPage.click('[data-action="ol_toLogin"]');
+  assert.strictEqual(await gPage.locator('[data-action="ol_google"]').count(), 1,
+    'bouton Google sur l’écran de connexion');
+  await gPage.click('[data-action="ol_google"]');
+  await gPage.waitForSelector('[data-action="ol_create"]');
+  const gUser = (await dbg(gPage)).user;
+  assert.ok(gUser && gUser.uid, 'connecté avec un compte Google');
+  // Ce compte joue comme les autres : il rejoint le salon existant.
+  await gPage.fill('[data-ol-field="code"]', code);
+  await gPage.click('[data-action="ol_join"]');
+  await gPage.waitForSelector('.ol-code');
+  assert.strictEqual((await dbg(gPage)).code, code, 'salon rejoint avec le compte Google');
+  await gPage.click('[data-action="ol_leave"]');
+  await gPage.close();
+  console.log('  ✓ connexion Google : bouton présent partout, compte utilisable en jeu');
+
   /* --- Sans serveur (?nonet) : modale « bientôt » --------------------- */
 
   const plain = await context.newPage();

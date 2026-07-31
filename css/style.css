@@ -763,3 +763,22 @@ body {
 /* Un peu plus d'air : l'arabe a des signes au-dessus et en dessous. */
 .lang-tn .role-title { letter-spacing: 0; }
 .lang-tn .role-hint, .lang-tn .hint, .lang-tn .tut-text { line-height: 1.65; }
+
+/* --- Bouton « Continuer avec Google » ------------------------------ */
+
+.btn-google {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: #fff; color: #1f1f1f;
+  border: 1px solid #dadce0;
+  font-weight: 600;
+}
+.btn-google:active { background: #f1f3f4; }
+.btn-google .g-logo { width: 20px; height: 20px; flex-shrink: 0; }
+.ol-sep {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-size: 0.85rem;
+  margin: 2px 0;
+}
+.ol-sep::before, .ol-sep::after {
+  content: ""; flex: 1; height: 1px; background: var(--line);
+}
