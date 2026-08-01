@@ -407,8 +407,19 @@ var ONLINE = (function () {
     '<path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.7-.4-3.9z"/>' +
     '</svg>';
 
+  // La connexion Google n'est proposée que si le domaine du site est
+  // autorisé côté Firebase (voir js/firebase-config.js) — sinon Google
+  // refuserait et le joueur n'aurait qu'un message d'erreur.
+  function googleEnabled() {
+    var b = B();
+    if (!b) return false;
+    if (b.kind === 'local') return true; // backend de test
+    return typeof SPY_GOOGLE_SIGNIN !== 'undefined' && !!SPY_GOOGLE_SIGNIN;
+  }
+
   // Bouton « Continuer avec Google » (affiché sur les trois écrans d'accès).
   function googleBtn() {
+    if (!googleEnabled()) return '';
     return '<button class="btn btn-google" data-action="ol_google"' +
       (S.busy ? ' disabled' : '') + '>' + GOOGLE_G + t('ol.google') + '</button>' +
       '<div class="ol-sep"><span>' + t('ol.or') + '</span></div>';

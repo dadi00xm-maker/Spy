@@ -8,6 +8,19 @@
  * Mettre SPY_FIREBASE_CONFIG à null désactive proprement le mode en ligne
  * (le bouton affiche alors « bientôt »).
  */
+/*
+ * Bouton « Continuer avec Google ».
+ *
+ * À laisser sur false tant que le domaine du site n'est pas déclaré dans
+ * Firebase (Authentication → Paramètres → Domaines autorisés). Sans cette
+ * autorisation, Google refuse la connexion et le joueur ne verrait qu'une
+ * erreur : autant ne pas lui montrer le bouton.
+ *
+ * Une fois « spy.labelnou.com » ajouté aux domaines autorisés (et le
+ * fournisseur Google activé), passer cette valeur à true.
+ */
+var SPY_GOOGLE_SIGNIN = false;
+
 var SPY_FIREBASE_CONFIG = {
   apiKey: 'AIzaSyDDimbRdL0Ct4mw6n1gNr6q4wxxcPbvljk',
   authDomain: 'spy-labelnou.firebaseapp.com',
