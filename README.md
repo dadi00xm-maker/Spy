@@ -19,7 +19,9 @@ compte, aucune donnée collectée.
   Agents réussissent 3 missions, l'Assassin des espions peut l'éliminer au
   dernier moment pour voler la victoire.
 - **Suivi complet de la partie** : 5 missions, tailles d'équipe équilibrées,
-  rotation du chef d'équipe, piste des votes rejetés (5 rejets = victoire des
+  **chef d'équipe tiré au sort à chaque manche** (le même joueur peut être
+  désigné plusieurs fois de suite — l'annonceur le nomme à voix haute),
+  piste des votes rejetés (5 rejets = victoire des
   espions), règle des « 2 échecs » pour la mission 4 à partir de 7 joueurs.
 - **Vote public** pour approuver ou rejeter chaque équipe.
 - **Missions secrètes** : comme avec de vraies cartes, chaque membre de

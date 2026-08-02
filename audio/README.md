@@ -31,6 +31,7 @@ synthèse vocale — le jeu n'est jamais bloqué.
 | `cer.cmdOpen` | Commandant, ouvre les yeux |
 | `cer.cmdClose` | Commandant referme ; espions baissez le pouce |
 | `cer.openAll` | Ouvrez tous les yeux, la partie commence |
+| `board.newLeader` | Un nouveau chef d'équipe est tiré au sort (sans prénom) |
 | `reveal.pass` | Passe le téléphone au joueur suivant (sans prénom) |
 | `mission.pass` | Passe le téléphone au joueur suivant (mission) |
 | `vote.approved` / `vote.rejected` | Équipe approuvée / rejetée |

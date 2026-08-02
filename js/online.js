@@ -190,7 +190,7 @@ var ONLINE = (function () {
         .map(function (u) { return names[u]; });
       state = {
         phase: 'reveal', order: order, names: names, n: n,
-        round: 0, leader: Math.floor(Math.random() * n), voteTrack: 0,
+        round: 0, leader: RULES.randomLeader(n), voteTrack: 0,
         missions: RULES.teamSizes(n).map(function () { return null; }),
         team: [], ready: {}, voted: {}, votes: null, approved: null,
         played: {}, revealCards: null, pending: null,
@@ -266,7 +266,7 @@ var ONLINE = (function () {
           if (state.voteTrack >= RULES.MAX_REJECTIONS) {
             endGame(state, 'spy', 'votes');
           } else {
-            state.leader = (state.leader + 1) % state.n;
+            state.leader = RULES.randomLeader(state.n);
             state.team = [];
             state.phase = 'team';
           }
@@ -317,7 +317,7 @@ var ONLINE = (function () {
           endGame(state, w, 'missions');
         } else {
           state.round++;
-          state.leader = (state.leader + 1) % state.n;
+          state.leader = RULES.randomLeader(state.n);
           state.team = [];
           state.phase = 'team';
           state.decisive = RULES.isDecisive(state.missions, state.round, state.n);

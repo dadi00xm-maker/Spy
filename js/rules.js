@@ -62,6 +62,14 @@ var RULES = (function () {
     return t.success === w - 1 && t.fail === w - 1;
   }
 
+  // Chef d'équipe tiré au sort à chaque manche. Contrairement à une
+  // rotation, le même joueur peut être désigné plusieurs fois de suite —
+  // c'est voulu : personne ne sait à l'avance qui composera l'équipe.
+  function randomLeader(nPlayers, rng) {
+    var random = rng || Math.random;
+    return Math.floor(random() * nPlayers);
+  }
+
   // Mélange de Fisher-Yates ; rng injectable pour les tests.
   function shuffle(arr, rng) {
     var random = rng || Math.random;
@@ -145,6 +153,7 @@ var RULES = (function () {
     winsNeeded: winsNeeded,
     failsNeeded: failsNeeded,
     isDecisive: isDecisive,
+    randomLeader: randomLeader,
     shuffle: shuffle,
     assignRoles: assignRoles,
     specialRoles: specialRoles,

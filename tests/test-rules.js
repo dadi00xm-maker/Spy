@@ -137,4 +137,21 @@ check('décompte et détection du vainqueur', () => {
   assert.strictEqual(RULES.winner([S, F, null], 4), null);
 });
 
+check('chef d’équipe tiré au sort (répétitions possibles)', () => {
+  // Le tirage couvre bien tous les joueurs…
+  const vus = new Set();
+  for (let i = 0; i < 400; i++) vus.add(RULES.randomLeader(5));
+  assert.deepStrictEqual([...vus].sort(), [0, 1, 2, 3, 4]);
+  // …et reste dans les bornes quel que soit l'effectif.
+  for (let n = RULES.MIN_PLAYERS; n <= RULES.MAX_PLAYERS; n++) {
+    const i = RULES.randomLeader(n);
+    assert.ok(Number.isInteger(i) && i >= 0 && i < n, 'chef valide à ' + n);
+  }
+  // Avec un tirage injecté : le même joueur peut être désigné d'affilée
+  // (c'est toute la différence avec l'ancienne rotation).
+  const rng = () => 0.5;
+  assert.strictEqual(RULES.randomLeader(6, rng), 3);
+  assert.strictEqual(RULES.randomLeader(6, rng), 3);
+});
+
 console.log('\n' + count + ' tests OK ✔');

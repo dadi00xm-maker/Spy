@@ -88,7 +88,7 @@
       voice: options.voice !== false,
       timerMin: options.timerMin,
       round: 0,
-      leader: Math.floor(Math.random() * n),
+      leader: RULES.randomLeader(n),
       voteTrack: 0,
       missions: RULES.teamSizes(n).map(function () { return null; }),
       phase: 'reveal', // reveal | team | vote | voteResult | mission | missionReveal | assassin
@@ -478,6 +478,14 @@
     state.screen = 'board';
     timerResetTo(g().timerMin);
     save();
+    announceLeader();
+  }
+
+  // Annonce du chef d'équipe tiré au sort — il change à chaque manche et
+  // peut retomber sur le même joueur, d'où l'importance de le dire.
+  function announceLeader() {
+    speak(t('board.newLeader', { name: g().players[g().leader].name }),
+      null, 'board.newLeader');
   }
 
   function teamSize() {
@@ -531,7 +539,7 @@
       g().missionPickIdx = null;
       g().missionChoices = [];
     } else {
-      g().leader = (g().leader + 1) % nPlayers();
+      g().leader = RULES.randomLeader(nPlayers());
       g().team = [];
       g().phase = 'team';
       timerResetTo(g().timerMin);
@@ -589,13 +597,16 @@
       state.screen = 'gameover';
     } else {
       g().round++;
-      g().leader = (g().leader + 1) % nPlayers();
+      g().leader = RULES.randomLeader(nPlayers());
       g().team = [];
       g().phase = 'team';
       timerResetTo(g().timerMin);
-      // Annonce de la finale décisive (égalité parfaite avant la dernière).
+      // Annonce de la finale décisive (égalité parfaite avant la dernière),
+      // puis du chef d'équipe tiré au sort pour cette manche.
       if (RULES.isDecisive(g().missions, g().round, nPlayers())) {
-        speak(t('decisive.hint'), null, 'decisive.hint');
+        speak(t('decisive.hint'), announceLeader, 'decisive.hint');
+      } else {
+        announceLeader();
       }
     }
     save();
@@ -1453,6 +1464,8 @@
         speak(t(wk), null, wk);
       } else if (g().phase === 'mission') {
         speak(t('mission.pass') + ' ' + g().players[g().team[0]].name, null, 'mission.pass');
+      } else if (g().phase === 'team') {
+        announceLeader();
       }
     },
 
@@ -1496,7 +1509,7 @@
       }
     },
     missionDone: function () {
-      finishMission();
+      finishMission(); // annonce elle-même le nouveau chef d'équipe
       if (state.screen === 'gameover') {
         var wk = g().winner === 'res' ? 'over.resWin' : 'over.spyWin';
         speak(t(wk), null, wk);

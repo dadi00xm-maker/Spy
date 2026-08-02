@@ -335,9 +335,11 @@ async function main() {
   assert.strictEqual(st.screen, 'gameover');
   assert.strictEqual(st.game.winner, 'spy');
   assert.strictEqual(st.game.winReason, 'votes');
-  // Le chef doit avoir tourné à chaque rejet.
-  for (let i = 1; i < leaders.length; i++) {
-    assert.strictEqual(leaders[i], (leaders[i - 1] + 1) % 5, 'rotation du chef');
+  // Le chef est retiré au sort à chaque rejet : toujours un joueur valide
+  // (et, contrairement à une rotation, il peut retomber sur le même).
+  assert.ok(leaders.length >= 5, 'un chef enregistré à chaque manche');
+  for (const l of leaders) {
+    assert.ok(Number.isInteger(l) && l >= 0 && l < 5, 'chef valide : ' + l);
   }
   console.log('  ✓ partie B : victoire des espions (5 équipes rejetées)');
 

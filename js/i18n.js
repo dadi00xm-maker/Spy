@@ -57,6 +57,7 @@ var I18N = {
     'reveal.progress': 'Joueur {i} / {n}',
 
     'board.leader': 'Chef d’équipe',
+    'board.newLeader': '{name} devient chef d’équipe et compose la mission.',
     'board.voteTrack': 'Équipes rejetées',
     'board.twoFails': '2 ✗ requis',
     'board.quit': 'Quitter',
@@ -304,6 +305,7 @@ var I18N = {
     'reveal.progress': 'Player {i} / {n}',
 
     'board.leader': 'Team leader',
+    'board.newLeader': '{name} is the new leader and picks the team.',
     'board.voteTrack': 'Rejected teams',
     'board.twoFails': '2 ✗ needed',
     'board.quit': 'Quit',
@@ -553,6 +555,7 @@ var I18N = {
     'reveal.progress': 'لاعب {i} / {n}',
 
     'board.leader': 'رئيس الفريق',
+    'board.newLeader': '{name} ولّى رئيس الفريق و باش يختار المهمّة.',
     'board.voteTrack': 'فرق مرفوضة',
     'board.twoFails': '2 ✗ لازم',
     'board.quit': 'أُخرج',
