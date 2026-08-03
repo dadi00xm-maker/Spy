@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0f1c">
+  <title>Spy — Écran TV</title>
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Habillage grand écran : uniquement des informations publiques. */
+    html, body { height: 100%; overflow: hidden; }
+    #app-tv {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4vh 4vw;
+      display: flex;
+      flex-direction: column;
+      gap: 3vh;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .tv-head { display: flex; align-items: center; justify-content: space-between; }
+    .tv-brand { display: flex; align-items: center; gap: 16px; }
+    .tv-brand img { width: 64px; height: 64px; }
+    .tv-brand .t { font-size: 2rem; font-weight: 800; letter-spacing: 0.18em; }
+    .tv-leader { font-size: 1.5rem; color: var(--muted); }
+    .tv-leader b { color: var(--gold); }
+    .tv-mtrack { display: flex; justify-content: center; gap: 2.2vw; }
+    .tv-mtrack .mnode { width: 7.5vw; height: 7.5vw; max-width: 110px; max-height: 110px; font-size: 2.2rem; }
+    .tv-mtrack .mbadge { font-size: 1rem; }
+    .tv-vtrack { justify-content: center; font-size: 1.2rem; }
+    .tv-vtrack .pip { width: 18px; height: 18px; }
+    .tv-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5vh;
+      text-align: center;
+    }
+    .tv-phase { font-size: 3rem; font-weight: 800; letter-spacing: 0.04em; line-height: 1.25; }
+    .tv-sub { font-size: 1.6rem; color: var(--muted); line-height: 1.4; }
+    .tv-chips { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; max-width: 80%; }
+    .tv-chips .pchip { font-size: 1.4rem; padding: 14px 22px; pointer-events: none; }
+    .tv-rcards { display: flex; gap: 16px; justify-content: center; }
+    .tv-rcards .rcard { width: 92px; height: 126px; font-size: 2.4rem; pointer-events: none; }
+    .tv-rcards .rcard svg { width: 52px; height: 52px; }
+    .tv-verdict { font-size: 2.6rem; }
+    .tv-roles { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 85%; }
+    .tv-roles .role-row { min-width: 240px; font-size: 1.3rem; }
+    .tv-wait-icon { width: 160px; height: 160px; }
+    .tv-warn { color: var(--gold); font-size: 1.5rem; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div id="app-tv"></div>
+  <script src="js/rules.js"></script>
+  <script src="js/i18n.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    var root = document.getElementById('app-tv');
+    var current = null;
+    var lang = 'fr';
+
+    function t(key, vars) {
+      var dict = I18N[lang] || I18N.fr;
+      var str = dict[key] || I18N.fr[key] || key;
+      if (vars) {
+        Object.keys(vars).forEach(function (k) {
+          str = str.split('{' + k + '}').join(String(vars[k]));
+        });
+      }
+      return str;
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function head(s) {
+      var leader = s ? '<div class="tv-leader">★ <b>' + esc(s.names[s.leader]) + '</b></div>' : '<span></span>';
+      return '<div class="tv-head">' +
+        '<div class="tv-brand"><img src="icons/icon.svg" alt=""><span class="t">SPY</span></div>' +
+        leader + '</div>';
+    }
+
+    function tracks(s) {
+      var html = '<div class="mtrack tv-mtrack">';
+      for (var i = 0; i < s.missions.length; i++) {
+        var cls = 'mnode';
+        var label = s.sizes[i];
+        if (s.missions[i] === 'success') { cls += ' ok'; label = '✓'; }
+        else if (s.missions[i] === 'fail') { cls += ' ko'; label = '✗'; }
+        else if (i === s.round) { cls += ' now'; }
+        var badge = '';
+        if (i === 3 && s.names.length >= 7) badge = '<span class="mbadge">' + t('board.twoFails') + '</span>';
+        else if (s.decisive && i === s.round) badge = '<span class="mbadge">🔥 ' + t('board.twoFails') + '</span>';
+        html += '<div class="mslot"><div class="' + cls + '">' + label + '</div>' + badge + '</div>';
+      }
+      html += '</div>';
+      var pips = '';
+      for (var j = 0; j < s.maxRejections; j++) {
+        pips += '<span class="pip' + (j < s.voteTrack ? ' on' : '') + '"></span>';
+      }
+      html += '<div class="vtrack tv-vtrack"><span class="vtrack-label">' + t('board.voteTrack') + '</span>' + pips + '</div>';
+      return html;
+    }
+
+    function teamChips(s) {
+      if (!s.team || !s.team.length) return '';
+      return '<div class="tv-chips">' + s.team.map(function (i) {
+        return '<span class="pchip sel">' + esc(s.names[i]) + '</span>';
+      }).join('') + '</div>';
+    }
+
+    function main(s) {
+      var h = '<div class="tv-main">';
+      if (s.screen === 'reveal' || s.screen === 'ceremony') {
+        h += '<div class="tv-phase">' + t('cast.tvDealing') + '</div>';
+      } else if (s.winner) {
+        var win = s.winner === 'res' ? t('over.resWin') : t('over.spyWin');
+        h += '<div class="tv-phase">' + win + '</div>';
+        if (s.assassination) {
+          h += '<div class="tv-sub">🗡 ' +
+            t(s.assassination.wasCommander ? 'over.assassinated' : 'over.survived', { name: esc(s.assassination.name) }) +
+            '</div>';
+        }
+        if (s.roles) {
+          h += '<div class="tv-roles">' + s.names.map(function (n, i) {
+            var isSpy = s.roles[i] === 'spy';
+            var label = isSpy ? t('role.spy') : t('role.res');
+            if (s.specials && s.specials[i] === 'commander') label = '★ ' + t('role.commander');
+            if (s.specials && s.specials[i] === 'assassin') label += ' · 🗡 ' + t('role.assassin');
+            return '<div class="role-row ' + (isSpy ? 'spy' : 'res') + '"><span>' + esc(n) + '</span><span>' + label + '</span></div>';
+          }).join('') + '</div>';
+        }
+      } else if (s.phase === 'team') {
+        h += '<div class="tv-phase">' + t('cast.tvTeam', { leader: esc(s.names[s.leader]) }) + '</div>';
+        if (s.decisive) h += '<div class="tv-warn">🔥 ' + t('decisive.hint') + '</div>';
+        h += teamChips(s);
+      } else if (s.phase === 'vote') {
+        h += '<div class="tv-phase">' + t('cast.tvVote') + '</div>' + teamChips(s);
+      } else if (s.phase === 'voteResult' && s.lastVote) {
+        var up = s.lastVote.votes.filter(function (v) { return v === 'up'; }).length;
+        var down = s.lastVote.votes.length - up;
+        h += '<div class="verdict tv-verdict ' + (s.lastVote.approved ? 'ok' : 'ko') + '">' +
+          t(s.lastVote.approved ? 'vote.approved' : 'vote.rejected') + '</div>' +
+          '<div class="tv-sub"><b>' + up + '</b> 👍 · <b>' + down + '</b> 👎</div>';
+      } else if (s.phase === 'mission') {
+        h += '<div class="tv-phase">' + t('cast.tvMission') + '</div>' + teamChips(s);
+      } else if (s.phase === 'missionReveal' && s.revealCards) {
+        h += '<div class="tv-rcards">' + s.revealCards.map(function (c) {
+          if (c === '?') return '<span class="rcard back">?</span>';
+          return '<span class="rcard ' + (c === 'S' ? 'ok' : 'ko') + '">' + (c === 'S' ? '✔' : '✘') + '</span>';
+        }).join('') + '</div>';
+        if (s.outcome) {
+          h += '<div class="verdict tv-verdict ' + (s.outcome.result === 'success' ? 'ok' : 'ko') + '">' +
+            t(s.outcome.result === 'success' ? 'mission.successResult' : 'mission.failResult') + '</div>';
+        }
+      } else if (s.phase === 'assassin') {
+        h += '<div class="tv-phase">🗡 ' + t('assassin.title') + '</div>' +
+          '<div class="tv-sub">' + t('assassin.hint') + '</div>';
+      }
+      h += '</div>';
+      return h;
+    }
+
+    function render() {
+      if (!current) {
+        root.innerHTML =
+          '<div class="tv-main">' +
+          '  <img class="tv-wait-icon" src="icons/icon.svg" alt="">' +
+          '  <div class="tv-phase">SPY</div>' +
+          '  <div class="tv-sub">' + t('cast.tvWaiting') + '</div>' +
+          '</div>';
+        return;
+      }
+      root.innerHTML = head(current) + tracks(current) + main(current);
+    }
+
+    function handle(data) {
+      var msg;
+      try { msg = JSON.parse(data); } catch (e) { return; }
+      if (msg && msg.type === 'state' && msg.state) {
+        current = msg.state;
+        lang = current.lang || 'fr';
+        // Le tounsi s'écrit en arabe : la TV passe en droite à gauche.
+        var html = document.documentElement;
+        html.setAttribute('lang', lang === 'tn' ? 'ar-TN' : lang);
+        html.setAttribute('dir', lang === 'tn' ? 'rtl' : 'ltr');
+        render();
+      }
+    }
+
+    if (navigator.presentation && navigator.presentation.receiver) {
+      navigator.presentation.receiver.connectionList.then(function (list) {
+        function attach(conn) {
+          conn.onmessage = function (e) { handle(e.data); };
+        }
+        list.connections.forEach(attach);
+        list.onconnectionavailable = function (e) { attach(e.connection); };
+      });
+    }
+    if ('BroadcastChannel' in window) {
+      var ch = new BroadcastChannel('spy-tv');
+      ch.onmessage = function (e) { handle(e.data); };
+    }
+
+    render();
+  })();
+  </script>
+</body>
+</html>
