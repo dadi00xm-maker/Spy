@@ -301,6 +301,24 @@ async function main() {
     await click('[data-action="missionDone"]');
     st = await state();
     assert.strictEqual(st.game.missions[round].result, 'fail', 'mission ' + (round + 1) + ' sabotée');
+
+    if (round === 1) {
+      // Historique : toucher une mission déjà jouée ouvre le récapitulatif.
+      assert.strictEqual(await page.locator('.mnode.done').count(), 2,
+        'les deux missions jouées sont cliquables');
+      await page.locator('.mnode.done').first().click();
+      const histTxt = await page.locator('.hist-list').innerText();
+      assert.strictEqual(await page.locator('.hist-row').count(), 2, 'deux manches racontées');
+      const leaderName = st.game.players[st.game.missions[0].leader].name;
+      assert.ok(histTxt.includes(leaderName), 'chef de la manche affiché : ' + leaderName);
+      for (const idx of st.game.missions[0].team) {
+        assert.ok(histTxt.includes(st.game.players[idx].name), 'membre affiché');
+      }
+      assert.ok(histTxt.includes('👍') || histTxt.includes('👎'), 'votes affichés');
+      await shot('25-historique');
+      await click('[data-action="histClose"]');
+      assert.strictEqual(await page.locator('.hist-list').count(), 0, 'historique refermé');
+    }
   }
 
   st = await state();
@@ -308,6 +326,14 @@ async function main() {
   assert.strictEqual(st.game.winner, 'spy');
   assert.strictEqual(st.game.winReason, 'missions');
   await shot('08-fin-espions');
+  // Chaque mission jouée garde son chef, son équipe et le vote qui l'a
+  // approuvée : c'est ce que lit l'historique.
+  for (let r = 0; r < 3; r++) {
+    const m = st.game.missions[r];
+    assert.ok(Array.isArray(m.team) && m.team.length > 0, 'équipe mémorisée');
+    assert.ok(Number.isInteger(m.leader), 'chef mémorisé');
+    assert.strictEqual(m.votes.length, 5, 'vote mémorisé');
+  }
   console.log('  ✓ partie A : victoire des espions (3 sabotages)');
 
   // Fin de partie sur la TV : vainqueur et rôles révélés.

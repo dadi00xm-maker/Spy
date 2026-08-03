@@ -24,6 +24,11 @@ compte, aucune donnée collectée.
   piste des votes rejetés (5 rejets = victoire des
   espions), règle des « 2 échecs » pour la mission 4 à partir de 7 joueurs.
 - **Vote public** pour approuver ou rejeter chaque équipe.
+- **Historique des missions** 📜 : toucher une mission déjà jouée sur la
+  piste rouvre la manche — chef d'équipe, composition, résultat, nombre de
+  cartes Sabotage et le vote de chacun. De quoi confondre celui qui a
+  approuvé toutes les équipes sabotées (disponible dans les deux modes ;
+  aucun rôle n'y est jamais révélé).
 - **Missions secrètes** : comme avec de vraies cartes, chaque membre de
   l'équipe joue sa carte en secret sur le téléphone, puis on retourne les
   cartes mélangées — impossible de savoir qui a saboté. Un Résistant reçoit

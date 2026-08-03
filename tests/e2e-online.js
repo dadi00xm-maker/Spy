@@ -217,10 +217,33 @@ async function main() {
     }
     await pages[2].waitForSelector('.verdict.ko');
     await host.click('[data-action="ol_missionNext"]');
-    await waitFor(host, (x) => {
+    const done = await waitFor(host, (x) => {
       const s = x.room.state;
       return s.missions[round] && s.missions[round].result === 'fail';
     }, 'mission ' + (round + 1) + ' sabotée');
+
+    if (round === 1) {
+      // Historique consultable par N'IMPORTE quel joueur (pas que l'hôte).
+      const p = pages[2];
+      await p.waitForSelector('.mnode.done');
+      await p.locator('.mnode.done').first().click();
+      await p.waitForSelector('.hist-list');
+      assert.strictEqual(await p.locator('.hist-row').count(), 2, 'deux manches racontées');
+      const txt = await p.locator('.hist-list').innerText();
+      const m0 = done.room.state.missions[0];
+      assert.ok(txt.includes(done.room.state.names[m0.leader]), 'chef de la manche affiché');
+      for (const uid of m0.team) {
+        assert.ok(txt.includes(done.room.state.names[uid]), 'membre affiché');
+      }
+      assert.ok(txt.includes('👍') || txt.includes('👎'), 'votes affichés');
+      // L'historique ne doit trahir aucun rôle.
+      assert.ok(!txt.includes('RÉSISTANT') && !txt.includes('SPY'),
+        'aucun rôle dans l’historique');
+      await shot(p, '26-historique-en-ligne');
+      await p.click('[data-action="ol_histClose"]');
+      assert.strictEqual(await p.locator('.hist-list').count(), 0, 'historique refermé');
+      console.log('  ✓ historique des missions : chef, équipe et votes de chaque manche');
+    }
   }
 
   const over = await waitFor(host, (d) => d.room.state.phase === 'gameover', 'fin de partie');

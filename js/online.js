@@ -28,6 +28,7 @@ var ONLINE = (function () {
     flipped: false, // ma carte de rôle est-elle retournée ?
     readySent: false,
     peek: false,    // revoir ma carte de rôle en cours de partie
+    hist: false,    // historique des missions déjà jouées
     pendingJoin: (params.get('join') || '').toUpperCase(), // lien d'invitation
     pick: [],       // sélection d'équipe (si je suis chef)
     mpick: null,    // index de la carte de mission touchée
@@ -94,7 +95,7 @@ var ONLINE = (function () {
     try { localStorage.removeItem('spy-online-code'); } catch (e) {}
     S.code = null; S.room = null; S.priv = null; S.hostData = null;
     S.flipped = false; S.readySent = false; S.pick = []; S.mpick = null;
-    S.peek = false; S.lastPhase = null; S.error = null; S.info = null;
+    S.peek = false; S.hist = false; S.lastPhase = null; S.error = null; S.info = null;
     S.busy = false;
     S.view = toView || 'menu';
   }
@@ -117,6 +118,7 @@ var ONLINE = (function () {
       S.pick = [];
       S.mpick = null;
       S.peek = false;
+      S.hist = false;
       if (phase === 'reveal') { S.flipped = false; S.readySent = false; }
     }
     S.view = room.state ? 'game' : 'lobby';
@@ -309,7 +311,15 @@ var ONLINE = (function () {
       case 'missionNext':
         if (state.phase !== 'missionReveal' || a.uid !== room.host) return;
         if (!state.revealCards.every(function (c) { return c.flipped; })) return;
-        state.missions[state.round] = { result: state.pending.result, fails: state.pending.fails };
+        // On garde de quoi relire la manche : chef, équipe et vote qui l'a
+        // approuvée (l'historique sert à la déduction).
+        state.missions[state.round] = {
+          result: state.pending.result,
+          fails: state.pending.fails,
+          leader: state.order[state.leader],
+          team: state.team.slice(),
+          votes: state.votes || null
+        };
         state.pending = null;
         state.revealCards = null;
         var w = RULES.winner(state.missions, state.n);
@@ -536,7 +546,11 @@ var ONLINE = (function () {
       } else if (RULES.isDecisive(state.missions, i, state.n)) {
         badge = '<span class="mbadge">🔥 ' + t('board.twoFails') + '</span>';
       }
-      track += '<div class="mslot"><div class="' + cls + '">' + label + '</div>' + badge + '</div>';
+      // Une mission jouée est cliquable : elle ouvre l'historique.
+      var node = m
+        ? '<button class="' + cls + ' done" data-action="ol_hist">' + label + '</button>'
+        : '<div class="' + cls + '">' + label + '</div>';
+      track += '<div class="mslot">' + node + badge + '</div>';
     }
     track += '</div>';
     var pips = '';
@@ -582,6 +596,56 @@ var ONLINE = (function () {
       '<div class="role-icon">' + icon + '</div>' +
       '<p class="role-hint">' + roleHint + '</p>' + extra +
       '</div></div></div></div>';
+  }
+
+  // Historique : ce qui s'est passé à chaque mission déjà jouée.
+  function histModal() {
+    if (!S.hist) return '';
+    var state = st();
+    var rows = '';
+    for (var i = 0; i < state.missions.length; i++) {
+      var m = state.missions[i];
+      if (!m) continue;
+      var ok = m.result === 'success';
+      var team = (m.team || []).map(function (uid) {
+        return esc(state.names[uid]);
+      }).join(' · ');
+      var votes = '';
+      if (m.votes) {
+        votes = '<div class="vote-tags">' + state.order.map(function (uid) {
+          var v = m.votes[uid];
+          if (typeof v !== 'boolean') return '';
+          return '<span class="vote-tag ' + (v ? 'up' : 'down') + '">' +
+            esc(state.names[uid]) + ' ' + (v ? '👍' : '👎') + '</span>';
+        }).join('') + '</div>';
+      }
+      var note = ok
+        ? (m.fails > 0
+          ? t('mission.notEnough', { f: m.fails, need: RULES.failsNeeded(state.n, i, false) })
+          : t('hist.noFail'))
+        : t('mission.failsCount', { f: m.fails });
+      rows +=
+        '<div class="hist-row ' + (ok ? 'ok' : 'ko') + '">' +
+        '  <div class="hist-head"><b>' + t('hist.mission', { i: i + 1 }) + '</b>' +
+        '    <span class="hist-res">' +
+        (ok ? '✓ ' + t('mission.successResult') : '✗ ' + t('mission.failResult')) + '</span></div>' +
+        '  <p class="hist-line"><span class="hint">' + t('hist.leader') + '</span> ★ ' +
+        esc(state.names[m.leader] || '') + '</p>' +
+        '  <p class="hist-line"><span class="hint">' + t('vote.team') + '</span> ' + team + '</p>' +
+        '  <p class="hint">' + note + '</p>' + votes +
+        '</div>';
+    }
+    if (!rows) rows = '<p class="hint center">' + t('hist.empty') + '</p>';
+    return '' +
+      '<div class="modal-back">' +
+      '  <div class="modal modal-wide">' +
+      '    <p><b>📜 ' + t('hist.title') + '</b></p>' +
+      '    <div class="hist-list">' + rows + '</div>' +
+      '    <div class="modal-btns">' +
+      '      <button class="btn btn-primary" data-action="ol_histClose">' + t('cast.ok') + '</button>' +
+      '    </div>' +
+      '  </div>' +
+      '</div>';
   }
 
   // Revoir sa carte en cours de partie (un joueur peut oublier son camp).
@@ -803,7 +867,7 @@ var ONLINE = (function () {
       case 'gameover': body = gGameover(); break;
       default: body = '<p class="hint center">' + t('ol.loading') + '</p>';
     }
-    return screenWrap(header() + body + peekModal());
+    return screenWrap(header() + body + peekModal() + histModal());
   }
 
   /* ------------------------------------------------------------------ */
@@ -895,6 +959,8 @@ var ONLINE = (function () {
     },
     ol_peek: function () { S.peek = true; },
     ol_peekClose: function () { S.peek = false; },
+    ol_hist: function () { S.hist = true; },
+    ol_histClose: function () { S.hist = false; },
     ol_start: function () { send({ type: 'start' }); },
     ol_flip: function () { S.flipped = !S.flipped; },
     ol_ready: function () {

@@ -782,3 +782,26 @@ body {
 .ol-sep::before, .ol-sep::after {
   content: ""; flex: 1; height: 1px; background: var(--line);
 }
+
+/* --- Historique des missions --------------------------------------- */
+
+.mnode.done { cursor: pointer; font: inherit; font-weight: 800; }
+.mnode.done:active { transform: scale(0.94); }
+.modal-wide { max-width: 420px; }
+.hist-list { max-height: 60vh; overflow-y: auto; text-align: start; margin-top: 6px; }
+.hist-row {
+  border-inline-start: 4px solid var(--line);
+  background: var(--bg2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.hist-row.ok { border-inline-start-color: var(--ok); }
+.hist-row.ko { border-inline-start-color: var(--red); }
+.hist-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.hist-res { font-weight: 700; font-size: 0.85rem; }
+.hist-row.ok .hist-res { color: var(--ok); }
+.hist-row.ko .hist-res { color: var(--red); }
+.hist-line { margin: 6px 0 0; font-size: 0.92rem; }
+.hist-row .vote-tags { margin-top: 8px; }
+.hist-row .vote-tag { font-size: 0.75rem; }

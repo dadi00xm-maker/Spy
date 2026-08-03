@@ -65,7 +65,8 @@
     game: null,
     quitAsk: false,
     castAsk: false,
-    onlineAsk: false
+    onlineAsk: false,
+    histOpen: false
   };
 
   var timer = { left: 0, running: false, handle: null, finished: false };
@@ -584,7 +585,10 @@
       result: out.result,
       fails: out.fails,
       team: g().team.slice(),
-      leader: g().leader
+      leader: g().leader,
+      // Le vote qui a approuvé cette équipe : précieux pour la déduction
+      // (« qui a voté pour l'équipe qui a été sabotée ? »).
+      votes: g().lastVote ? g().lastVote.votes.slice() : null
     };
     var w = RULES.winner(g().missions, nPlayers());
     if (w === 'res' && g().commanderMode) {
@@ -848,10 +852,65 @@
       } else if (RULES.isDecisive(game.missions, i, nPlayers())) {
         badge = '<span class="mbadge">🔥 ' + t('board.twoFails') + '</span>';
       }
-      html += '<div class="mslot"><div class="' + cls + '">' + label + '</div>' + badge + '</div>';
+      // Une mission jouée est cliquable : elle ouvre l'historique.
+      var node = m
+        ? '<button class="' + cls + ' done" data-action="showHistory" title="' +
+          esc(t('hist.open')) + '">' + label + '</button>'
+        : '<div class="' + cls + '">' + label + '</div>';
+      html += '<div class="mslot">' + node + badge + '</div>';
     }
     html += '</div>';
     return html;
+  }
+
+  // Historique : ce qui s'est passé à chaque mission déjà jouée.
+  function historyModal() {
+    if (!state.histOpen) return '';
+    var game = g();
+    var rows = '';
+    for (var i = 0; i < game.missions.length; i++) {
+      var m = game.missions[i];
+      if (!m) continue;
+      var ok = m.result === 'success';
+      var team = (m.team || []).map(function (idx) {
+        return esc(game.players[idx].name);
+      }).join(' · ');
+      var votes = '';
+      if (m.votes) {
+        votes = '<div class="vote-tags">' + m.votes.map(function (v, idx) {
+          return '<span class="vote-tag ' + (v === 'up' ? 'up' : 'down') + '">' +
+            esc(game.players[idx].name) + ' ' + (v === 'up' ? '👍' : '👎') + '</span>';
+        }).join('') + '</div>';
+      }
+      var note = ok
+        ? (m.fails > 0 ? t('mission.notEnough', { f: m.fails, need: RULES.failsNeeded(nPlayers(), i, false) })
+          : t('hist.noFail'))
+        : t('mission.failsCount', { f: m.fails });
+      rows +=
+        '<div class="hist-row ' + (ok ? 'ok' : 'ko') + '">' +
+        '  <div class="hist-head">' +
+        '    <b>' + t('hist.mission', { i: i + 1 }) + '</b>' +
+        '    <span class="hist-res">' +
+        (ok ? '✓ ' + t('mission.successResult') : '✗ ' + t('mission.failResult')) + '</span>' +
+        '  </div>' +
+        '  <p class="hist-line"><span class="hint">' + t('hist.leader') + '</span> ★ ' +
+        esc(game.players[m.leader].name) + '</p>' +
+        '  <p class="hist-line"><span class="hint">' + t('vote.team') + '</span> ' + team + '</p>' +
+        '  <p class="hint">' + note + '</p>' +
+        votes +
+        '</div>';
+    }
+    if (!rows) rows = '<p class="hint center">' + t('hist.empty') + '</p>';
+    return '' +
+      '<div class="modal-back">' +
+      '  <div class="modal modal-wide">' +
+      '    <p><b>📜 ' + t('hist.title') + '</b></p>' +
+      '    <div class="hist-list">' + rows + '</div>' +
+      '    <div class="modal-btns">' +
+      '      <button class="btn btn-primary" data-action="histClose">' + t('cast.ok') + '</button>' +
+      '    </div>' +
+      '  </div>' +
+      '</div>';
   }
 
   function voteTrackBar() {
@@ -916,7 +975,7 @@
       case 'missionReveal': html += viewMissionReveal(); break;
       case 'assassin': html += viewAssassin(); break;
     }
-    html += quitModal() + castModal() + '</div>';
+    html += quitModal() + castModal() + historyModal() + '</div>';
     return html;
   }
 
@@ -1554,6 +1613,7 @@
     quitNo: function () { state.quitAsk = false; },
     quitYes: function () {
       state.quitAsk = false;
+      state.histOpen = false;
       timerStop();
       if (window.SPYCAST) SPYCAST.stop();
       clearGame();
@@ -1574,6 +1634,9 @@
       state.castAsk = true;
     },
     castOk: function () { state.castAsk = false; },
+
+    showHistory: function () { state.histOpen = true; },
+    histClose: function () { state.histOpen = false; },
 
     onlineBtn: function () {
       if (!ONLINE.available()) { state.onlineAsk = true; return; }
