@@ -805,3 +805,7 @@ body {
 .hist-line { margin: 6px 0 0; font-size: 0.92rem; }
 .hist-row .vote-tags { margin-top: 8px; }
 .hist-row .vote-tag { font-size: 0.75rem; }
+
+/* Le chef ne vote pas : sa ligne rappelle qu'il a composé l'équipe. */
+.vote-row.leader-row { opacity: 0.85; }
+.vote-auto { color: var(--muted); font-size: 0.82rem; }

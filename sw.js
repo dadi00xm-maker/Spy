@@ -1,5 +1,5 @@
 /* Service worker : mise en cache de l'application pour jouer hors ligne. */
-var CACHE = 'spy-v25';
+var CACHE = 'spy-v26';
 var ASSETS = [
   './',
   './index.html',

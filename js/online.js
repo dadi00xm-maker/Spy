@@ -231,10 +231,15 @@ var ONLINE = (function () {
         var valid = a.team.every(function (uid) { return !!state.names[uid]; });
         if (!valid) return;
         state.team = a.team;
-        state.voted = {};
         state.votes = null;
         state.approved = null;
+        // Le chef ne vote pas : il vient de composer l'équipe, son accord
+        // est acquis et compte comme un « pour ».
+        var lead = state.order[state.leader];
+        state.voted = {};
+        state.voted[lead] = true;
         S.hostData.votes = {};
+        S.hostData.votes[lead] = true;
         saveHost();
         state.phase = 'vote';
         push(state);
@@ -242,6 +247,7 @@ var ONLINE = (function () {
 
       case 'vote':
         if (state.phase !== 'vote' || !state.names[a.uid] || state.voted[a.uid]) return;
+        if (a.uid === state.order[state.leader]) return; // le chef ne vote pas
         S.hostData.votes[a.uid] = !!a.up;
         state.voted[a.uid] = true;
         saveHost();
@@ -616,7 +622,8 @@ var ONLINE = (function () {
           var v = m.votes[uid];
           if (typeof v !== 'boolean') return '';
           return '<span class="vote-tag ' + (v ? 'up' : 'down') + '">' +
-            esc(state.names[uid]) + ' ' + (v ? '👍' : '👎') + '</span>';
+            (uid === m.leader ? '★ ' : '') + esc(state.names[uid]) + ' ' +
+            (v ? '👍' : '👎') + '</span>';
         }).join('') + '</div>';
       }
       var note = ok
@@ -715,7 +722,10 @@ var ONLINE = (function () {
     var votedCount = Object.keys(state.voted).length;
     var progress = '<p class="hint center">' + t('ol.votedCount', { x: votedCount, n: state.n }) + '</p>';
     var body;
-    if (state.voted[me().uid]) {
+    if (state.order[state.leader] === me().uid) {
+      // Le chef a composé l'équipe : il ne vote pas.
+      body = '<p class="verdict neutral">★ ' + t('vote.leaderAuto') + ' 👍</p>' + progress;
+    } else if (state.voted[me().uid]) {
       body = '<p class="verdict neutral">✓ ' + t('ol.voted') + '</p>' + progress;
     } else {
       body =
@@ -732,10 +742,13 @@ var ONLINE = (function () {
   function gVoteResult() {
     var state = st();
     var up = 0, down = 0;
+    var leadUid = state.order[state.leader];
     var tags = state.order.map(function (uid) {
       var v = state.votes[uid];
       if (v) up++; else down++;
-      return '<span class="vote-tag ' + (v ? 'up' : 'down') + '">' + esc(state.names[uid]) + ' ' + (v ? '👍' : '👎') + '</span>';
+      return '<span class="vote-tag ' + (v ? 'up' : 'down') + '">' +
+        (uid === leadUid ? '★ ' : '') + esc(state.names[uid]) + ' ' +
+        (v ? '👍' : '👎') + '</span>';
     }).join('');
     var verdict = state.approved
       ? '<p class="verdict ok">' + t('vote.approved') + '</p>'

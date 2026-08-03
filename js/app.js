@@ -508,7 +508,12 @@
 
   function startVote() {
     g().phase = 'vote';
-    g().votes = g().players.map(function () { return null; });
+    // Le chef ne vote pas : il vient de composer l'équipe, son accord est
+    // acquis d'avance. Sa voix compte comme un « pour ».
+    var leader = g().leader;
+    g().votes = g().players.map(function (p, i) {
+      return i === leader ? 'up' : null;
+    });
   }
 
   function resolveVote() {
@@ -879,7 +884,8 @@
       if (m.votes) {
         votes = '<div class="vote-tags">' + m.votes.map(function (v, idx) {
           return '<span class="vote-tag ' + (v === 'up' ? 'up' : 'down') + '">' +
-            esc(game.players[idx].name) + ' ' + (v === 'up' ? '👍' : '👎') + '</span>';
+            (idx === m.leader ? '★ ' : '') + esc(game.players[idx].name) + ' ' +
+            (v === 'up' ? '👍' : '👎') + '</span>';
         }).join('') + '</div>';
       }
       var note = ok
@@ -1041,9 +1047,17 @@
     var teamNames = game.team.map(function (i) { return esc(game.players[i].name); }).join(' · ');
     var rows = game.players.map(function (p, i) {
       var v = game.votes[i];
+      // Le chef ne vote pas : il a composé l'équipe.
+      if (i === game.leader) {
+        return '' +
+          '<div class="vote-row leader-row">' +
+          '  <span class="vote-name">★ ' + esc(p.name) + '</span>' +
+          '  <span class="vote-auto">' + t('vote.leaderAuto') + ' 👍</span>' +
+          '</div>';
+      }
       return '' +
         '<div class="vote-row">' +
-        '  <span class="vote-name">' + (i === game.leader ? '★ ' : '') + esc(p.name) + '</span>' +
+        '  <span class="vote-name">' + esc(p.name) + '</span>' +
         '  <span class="vote-btns">' +
         '    <button class="vbtn up' + (v === 'up' ? ' on' : '') + '" data-action="vote" data-idx="' + i + '" data-v="up">👍</button>' +
         '    <button class="vbtn down' + (v === 'down' ? ' on' : '') + '" data-action="vote" data-idx="' + i + '" data-v="down">👎</button>' +
@@ -1070,7 +1084,8 @@
     var rows = game.players.map(function (p, i) {
       var v = lv.votes[i];
       return '<span class="vote-tag ' + (v === 'up' ? 'up' : 'down') + '">' +
-        esc(p.name) + ' ' + (v === 'up' ? '👍' : '👎') + '</span>';
+        (i === game.leader ? '★ ' : '') + esc(p.name) + ' ' +
+        (v === 'up' ? '👍' : '👎') + '</span>';
     }).join('');
     var html = '<section class="phase center-phase">';
     if (lv.approved) {
@@ -1506,6 +1521,7 @@
 
     vote: function (el) {
       var i = parseInt(el.getAttribute('data-idx'), 10);
+      if (i === g().leader) return 'noRender'; // le chef a composé l'équipe
       var v = el.getAttribute('data-v');
       g().votes[i] = (g().votes[i] === v) ? null : v;
     },

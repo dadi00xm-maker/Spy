@@ -23,7 +23,9 @@ compte, aucune donnée collectée.
   désigné plusieurs fois de suite — l'annonceur le nomme à voix haute),
   piste des votes rejetés (5 rejets = victoire des
   espions), règle des « 2 échecs » pour la mission 4 à partir de 7 joueurs.
-- **Vote public** pour approuver ou rejeter chaque équipe.
+- **Vote public** pour approuver ou rejeter chaque équipe. **Le chef ne
+  vote pas** : il vient de composer l'équipe, son accord est acquis et sa
+  voix compte automatiquement « pour » (marquée ★ dans les résultats).
 - **Historique des missions** 📜 : toucher une mission déjà jouée sur la
   piste rouvre la manche — chef d'équipe, composition, résultat, nombre de
   cartes Sabotage et le vote de chacun. De quoi confondre celui qui a

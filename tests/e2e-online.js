@@ -180,8 +180,12 @@ async function main() {
     }
     await leaderPage.click('[data-action="ol_team"]:not([disabled])');
 
-    // Tout le monde vote OUI depuis son téléphone.
+    // Tout le monde vote OUI depuis son téléphone — sauf le chef, qui a
+    // composé l'équipe et dont la voix compte automatiquement « pour ».
+    assert.strictEqual(await leaderPage.locator('[data-action="ol_vote"]').count(), 0,
+      'pas de bouton de vote pour le chef');
     for (const p of pages) {
+      if (p === leaderPage) continue;
       await p.waitForSelector('[data-action="ol_vote"][data-v="up"]');
       await p.click('[data-action="ol_vote"][data-v="up"]');
     }

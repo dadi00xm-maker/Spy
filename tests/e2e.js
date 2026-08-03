@@ -98,7 +98,12 @@ async function main() {
 
   async function voteAll(v, expectApproved) {
     const st = await state();
+    // Le chef ne vote pas : il a composé l'équipe (sa voix compte « pour »).
+    assert.strictEqual(
+      await page.locator(`[data-action="vote"][data-idx="${st.game.leader}"]`).count(), 0,
+      'le chef n’a pas de bouton de vote');
     for (let i = 0; i < st.game.players.length; i++) {
+      if (i === st.game.leader) continue;
       await click(`[data-action="vote"][data-idx="${i}"][data-v="${v}"]`);
     }
     await click('[data-action="voteResult"]:not([disabled])');
